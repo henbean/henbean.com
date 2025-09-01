@@ -27,6 +27,7 @@ body {
 .header-left {
   display: flex;
   align-items: center;
+  margin-right: 100px;
 }
 
 #top-bar h1 {
