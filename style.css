@@ -28,6 +28,9 @@ body {
   display: flex;
   align-items: center;
   margin-top: 10px;
+  margin-left: 10px;
+  margin-bottom: 16px;
+  margin-right: 20px;
 }
 
 #top-bar h1 {
