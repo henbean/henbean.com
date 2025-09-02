@@ -6,36 +6,37 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background-color: var(--dark-color);
-    color: var(--light-color);
+  margin: 0;
+  background-color: var(--dark-color);
+  color: var(--light-color);
 }
 
 /* Header Styling */
 #top-bar {
   background-color: var(--light-color);
-  color: var(--dark-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 100;
+  background:
+    linear-gradient(0.25turn, #000000, #4c4c4c)
 }
 
 .header-left {
+  font-family: Arial, sans-serif;
+  font-size: 50px;
+  color: #787878;
   display: flex;
+  text-align: center;
   align-items: center;
   margin-top: 10px;
   margin-left: 10px;
-  margin-bottom: 16px;
-  font-size: 40px;
+  margin-bottom: 10px;
 }
 
 #top-bar h1 {
-  font-size: 3rem;
-  margin: 0 20px 0 0;
   color: var(--title);
 }
 
