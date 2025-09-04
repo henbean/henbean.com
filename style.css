@@ -1,32 +1,39 @@
-:root {
-    --light-color: #101010;
-    --title: #ffffff;
-    --dark-color: #000000;
-    --accent-color: #050505;
-}
+
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;1,100&display=swap');
+
 
 body {
   margin: 0;
-  background-color: var(--dark-color);
-  color: var(--light-color);
+  background:#000000;
 }
 
-/* Header Styling */
-#top-bar {
-  background-color: var(--light-color);
+.container {
+  background-color: rgb(0 0 0);
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   background:
-    linear-gradient(2deg, rgb(0 0 0 / 0.6), transparent 70%),
-    linear-gradient(179deg, rgb(255 255 255 / 0.2), transparent 70%);
+    linear-gradient(240deg, rgb(255 255 255 / 0.15), transparent 30%),
+    linear-gradient(175deg, rgb(255 255 255 / 0.2), transparent 60%);
+}
+
+.border {
+  height: 1px;
+  width: 100%;
+  top: 99%;
+  background-color: rgb(255, 255, 255);
+  position: absolute;
+  background:
+    linear-gradient(179deg, rgb(100, 100, 100), transparent 80%),
+    linear-gradient(240deg, rgb(100, 100, 100), transparent 50%);
 }
 
 .header-left {
-  font-family: Arial, sans-serif;
-  font-size: 50px;
+  font-family: "Raleway", sans-serif;
+  font-size: 48px;
   color: #787878;
   display: flex;
   text-align: center;
@@ -34,16 +41,12 @@ body {
   margin-top: -20px;
   margin-left: 30px;
   margin-bottom: -20px;
-  text-shadow: 4px -6px 50px rgb(79, 79, 79);
+  text-shadow: 10px -6px 50px rgb(100, 100, 100);
   background:
     linear-gradient(#c6c6c6, #161616);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-}
-
-#top-bar h1 {
-  color: var(--title);
 }
 
 .profile-pic {
