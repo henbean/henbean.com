@@ -111,7 +111,7 @@ body {
   overflow: hidden;
   transition: all 0.05s ease;
   user-select: none;
-  display: flex;
+  display: inline-block;
   align-items: center;
   justify-content: center;
   background: transparent;
