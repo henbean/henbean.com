@@ -23,12 +23,70 @@ class ImageGrid {
   init() {
     this.setupEventListeners();
     this.createContextMenu();
-    this.loadSavedState();
+    this.loadImagesFromServer();
     this.updateTransform();
   }
   
-  // Save current state to localStorage
-  saveState() {
+  // Load images from the server's JSON file
+  async loadImagesFromServer() {
+    try {
+      const response = await fetch('images.json');
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Restore grid state
+        if (data.gridState) {
+          this.scale = data.gridState.scale || 1;
+          this.panX = data.gridState.panX || 0;
+          this.panY = data.gridState.panY || 0;
+        }
+        
+        // Restore images
+        if (data.images && data.images.length > 0) {
+          data.images.forEach(imageData => {
+            this.restoreImageFromServer(imageData);
+          });
+        }
+      } else {
+        console.log('No images.json found, starting with empty grid');
+      }
+    } catch (error) {
+      console.error('Error loading images from server:', error);
+    }
+  }
+  
+  // Restore a single image from server data
+  restoreImageFromServer(imageData) {
+    const gridItem = document.createElement('div');
+    gridItem.className = 'grid-item';
+    gridItem.dataset.imageId = imageData.id;
+    gridItem.dataset.originalName = imageData.originalName;
+    
+    const img = document.createElement('img');
+    img.src = `images/${imageData.filename}`; // Load from images folder
+    img.alt = 'Grid image';
+    
+    // Set position and size
+    gridItem.style.position = 'absolute';
+    gridItem.style.left = imageData.x + 'px';
+    gridItem.style.top = imageData.y + 'px';
+    gridItem.style.width = imageData.width + 'px';
+    gridItem.style.height = imageData.height + 'px';
+    gridItem.style.margin = '0';
+    
+    gridItem.appendChild(img);
+    this.imageGrid.appendChild(gridItem);
+    this.setupDragAndDrop(gridItem);
+    
+    // Update counter to avoid ID conflicts
+    const idNum = parseInt(imageData.id.replace('img_', ''));
+    if (idNum >= this.imageCounter) {
+      this.imageCounter = idNum + 1;
+    }
+  }
+  
+  // Save current state to localStorage (for temporary storage)
+  saveStateToLocal() {
     const images = [];
     const gridItems = this.imageGrid.querySelectorAll('.grid-item');
     
@@ -37,7 +95,7 @@ class ImageGrid {
       if (img) {
         images.push({
           id: item.dataset.imageId,
-          data: img.src,
+          filename: item.dataset.filename,
           x: parseInt(item.style.left) || 0,
           y: parseInt(item.style.top) || 0,
           width: parseInt(item.style.width) || 200,
@@ -59,8 +117,8 @@ class ImageGrid {
     localStorage.setItem('imageGridState', JSON.stringify(state));
   }
   
-  // Load saved state from localStorage
-  loadSavedState() {
+  // Load from localStorage (fallback)
+  loadStateFromLocal() {
     const savedState = localStorage.getItem('imageGridState');
     if (savedState) {
       try {
@@ -76,24 +134,25 @@ class ImageGrid {
         // Restore images
         if (state.images && state.images.length > 0) {
           state.images.forEach(imageData => {
-            this.restoreImage(imageData);
+            this.restoreImageFromLocal(imageData);
           });
         }
       } catch (error) {
-        console.error('Error loading saved state:', error);
+        console.error('Error loading from localStorage:', error);
       }
     }
   }
   
-  // Restore a single image from saved data
-  restoreImage(imageData) {
+  // Restore image from localStorage
+  restoreImageFromLocal(imageData) {
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
     gridItem.dataset.imageId = imageData.id;
     gridItem.dataset.originalName = imageData.originalName;
+    gridItem.dataset.filename = imageData.filename;
     
     const img = document.createElement('img');
-    img.src = imageData.data;
+    img.src = imageData.data || `images/${imageData.filename}`;
     img.alt = 'Grid image';
     
     // Set position and size
@@ -157,7 +216,7 @@ class ImageGrid {
       item.style.width = size + 'px';
       item.style.height = size + 'px';
       this.updateGridLayout();
-      this.saveState(); // Save after resize
+      this.saveStateToLocal(); // Save to localStorage
     }
   }
   
@@ -165,7 +224,7 @@ class ImageGrid {
     if (confirm('Are you sure you want to delete this image?')) {
       item.remove();
       this.updateGridLayout();
-      this.saveState(); // Save after deletion
+      this.saveStateToLocal(); // Save to localStorage
     }
   }
   
@@ -230,7 +289,7 @@ class ImageGrid {
     
     // Save state when page is about to unload
     window.addEventListener('beforeunload', () => {
-      this.saveState();
+      this.saveStateToLocal();
     });
   }
   
@@ -251,7 +310,7 @@ class ImageGrid {
       const gridItem = this.createGridItem(e.target.result, file);
       this.imageGrid.appendChild(gridItem);
       this.setupDragAndDrop(gridItem);
-      this.saveState(); // Save after adding new image
+      this.saveStateToLocal(); // Save to localStorage
     };
     reader.readAsDataURL(file);
   }
@@ -260,9 +319,11 @@ class ImageGrid {
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
     
-    // Generate unique ID for this image
+    // Generate unique ID and filename for this image
     const imageId = `img_${this.imageCounter++}`;
+    const filename = `${imageId}_${file.name}`;
     gridItem.dataset.imageId = imageId;
+    gridItem.dataset.filename = filename;
     gridItem.dataset.originalName = file.name || 'image';
     
     const img = document.createElement('img');
@@ -358,7 +419,7 @@ class ImageGrid {
     if (this.draggedElement) {
       this.draggedElement.classList.remove('dragging');
       this.draggedElement = null;
-      this.saveState(); // Save after drag ends
+      this.saveStateToLocal(); // Save to localStorage
     }
     
     document.removeEventListener('mousemove', this.handleDrag.bind(this));
@@ -391,7 +452,7 @@ class ImageGrid {
   endPan() {
     this.isPanning = false;
     this.gridContainer.classList.remove('panning');
-    this.saveState(); // Save after pan ends
+    this.saveStateToLocal(); // Save to localStorage
   }
   
   zoom(e) {
@@ -412,7 +473,7 @@ class ImageGrid {
     
     this.scale = newScale;
     this.updateTransform();
-    this.saveState(); // Save after zoom
+    this.saveStateToLocal(); // Save to localStorage
   }
   
   updateTransform() {
