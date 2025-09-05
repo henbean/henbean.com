@@ -191,30 +191,9 @@ class ImageGrid {
     const deltaX = e.clientX - this.lastPanX;
     const deltaY = e.clientY - this.lastPanY;
     
-    const newPanX = this.panX + deltaX;
-    const newPanY = this.panY + deltaY;
-    
-    // Calculate pan limits based on current scale
-    const containerRect = this.gridContainer.getBoundingClientRect();
-    
-    // Get the actual grid dimensions (not scaled)
-    const gridRect = this.imageGrid.getBoundingClientRect();
-    const actualGridWidth = gridRect.width / this.scale;
-    const actualGridHeight = gridRect.height / this.scale;
-    
-    // Calculate the scaled dimensions of the grid
-    const scaledGridWidth = actualGridWidth * this.scale;
-    const scaledGridHeight = actualGridHeight * this.scale;
-    
-    // Calculate maximum pan values to keep grid covering viewport
-    const maxPanX = 0; // Can't pan right past the left edge
-    const minPanX = containerRect.width - scaledGridWidth; // Can't pan left past the right edge
-    const maxPanY = 0; // Can't pan down past the top edge
-    const minPanY = containerRect.height - scaledGridHeight; // Can't pan up past the bottom edge
-    
-    // Apply limits
-    this.panX = Math.max(minPanX, Math.min(maxPanX, newPanX));
-    this.panY = Math.max(minPanY, Math.min(maxPanY, newPanY));
+    // No pan limits - free movement
+    this.panX += deltaX;
+    this.panY += deltaY;
     
     this.lastPanX = e.clientX;
     this.lastPanY = e.clientY;
@@ -233,7 +212,7 @@ class ImageGrid {
     const mouseY = e.clientY - rect.top;
     
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(1, Math.min(3, this.scale * zoomFactor));
+    const newScale = Math.max(0.25, Math.min(5, this.scale * zoomFactor));
     
     // Calculate zoom point relative to current pan
     const zoomPointX = (mouseX - this.panX) / this.scale;
