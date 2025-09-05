@@ -1,0 +1,20 @@
+
+
+{
+    "images": [
+      {
+        "id": "art_0",
+        "filename": "wallpaper_1.png",
+        "x": 800,
+        "y": 50,
+        "width": 200,
+        "height": 200,
+        "originalName": "wallpaper_1.png"
+      }
+    ],
+    "gridState": {
+      "scale": 1,
+      "panX": 0,
+      "panY": 0
+    }
+  }
