@@ -80,7 +80,6 @@ body {
   bottom: 0;
   overflow: hidden;
   background: #000;
-  cursor: grab;
 }
 
 .grid-container.panning {
@@ -106,7 +105,6 @@ body {
 }
 
 .grid-item {
-  cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: all 0.05s ease;
@@ -115,10 +113,6 @@ body {
   align-items: center;
   justify-content: center;
   background: transparent;
-}
-
-.grid-item:hover {
-  transform: scale(1.02);
 }
 
 .grid-item.dragging {
@@ -132,13 +126,14 @@ body {
   width: auto;
   height: auto;
   object-fit: contain;
-  pointer-events: none;
   border-radius: 4px;
+  cursor: grab; /* Add grab cursor to image */
 }
 
 /* Shadow only on the image when dragging */
 .grid-item.dragging img {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  cursor: grabbing; /* Show grabbing cursor when dragging */
 }
 
 /* Context Menu Styles */
@@ -213,4 +208,56 @@ body {
 .add-image-btn:hover {
   background: #222;
   transform: scale(1.05);
+}
+
+/* Dev Mode Rulers */
+.dev-mode-enabled .grid-item:hover .ruler-x,
+.dev-mode-enabled .grid-item:hover .ruler-y {
+  display: block;
+}
+
+.ruler-x {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: red;
+  display: none;
+  z-index: 10;
+}
+
+.ruler-x::after {
+  content: attr(data-value);
+  position: absolute;
+  top: -15px;
+  left: 0;
+  color: red;
+  font-size: 10px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: nowrap;
+}
+
+.ruler-y {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background-color: red;
+  display: none;
+  z-index: 10;
+}
+
+.ruler-y::after {
+  content: attr(data-value);
+  position: absolute;
+  top: 140px; /* Adjusted to move down */
+  left: -16px; /* Adjusted to move right */
+  color: red;
+  font-size: 10px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  white-space: nowrap;
+  transform: rotate(-90deg);
+  transform-origin: top left;
 }

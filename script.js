@@ -16,6 +16,19 @@ class ImageGrid {
     this.contextMenu = null;
     this.selectedItem = null;
     this.imageCounter = 0;
+    this.devMode = false; // Add devMode state
+    
+    // For managing z-index of overlapping images
+    this.zIndexCounter = 10;
+    
+    // Global rulers for dev mode
+    this.rulerX = document.createElement('div');
+    this.rulerX.className = 'ruler-x';
+    document.body.appendChild(this.rulerX);
+    
+    this.rulerY = document.createElement('div');
+    this.rulerY.className = 'ruler-y';
+    document.body.appendChild(this.rulerY);
     
     this.init();
   }
@@ -24,6 +37,7 @@ class ImageGrid {
     this.setupEventListeners();
     this.createContextMenu();
     this.loadImagesFromServer();
+    this.loadDevModeState(); // Load dev mode state
     this.updateTransform();
   }
   
@@ -55,6 +69,40 @@ class ImageGrid {
     }
   }
   
+  loadDevModeState() {
+    try {
+      const storedDevMode = localStorage.getItem('devMode');
+      if (storedDevMode !== null) {
+        this.devMode = JSON.parse(storedDevMode);
+        this.updateDevModeUI();
+      }
+    } catch (error) {
+      console.error('Error loading dev mode state from local storage:', error);
+    }
+  }
+  
+  saveDevModeState() {
+    try {
+      localStorage.setItem('devMode', JSON.stringify(this.devMode));
+    } catch (error) {
+      console.error('Error saving dev mode state to local storage:', error);
+    }
+  }
+  
+  updateDevModeUI() {
+    if (this.devMode) {
+      document.body.classList.add('dev-mode-enabled');
+    } else {
+      document.body.classList.remove('dev-mode-enabled');
+      this.hideRulers(); // Hide rulers when dev mode is disabled
+    }
+    // Update context menu item text
+    const devModeToggleItem = this.contextMenu.querySelector('[data-action="toggleDevMode"]');
+    if (devModeToggleItem) {
+      devModeToggleItem.textContent = this.devMode ? 'Disable Dev Mode' : 'Enable Dev Mode';
+    }
+  }
+  
   // Restore a single image from server data
   restoreImageFromServer(imageData) {
     const gridItem = document.createElement('div');
@@ -83,6 +131,25 @@ class ImageGrid {
     if (idNum >= this.imageCounter) {
       this.imageCounter = idNum + 1;
     }
+    
+    // Add rulers for dev mode (similar to createGridItem)
+    gridItem.addEventListener('mouseover', () => {
+      if (this.devMode) {
+        this.updateRulers(gridItem);
+      }
+    });
+    
+    gridItem.addEventListener('mousemove', (e) => {
+      if (this.devMode) {
+        this.updateRulers(gridItem);
+      }
+    });
+    
+    gridItem.addEventListener('mouseout', () => {
+      if (this.devMode) {
+        this.hideRulers();
+      }
+    });
   }
   
   createContextMenu() {
@@ -92,6 +159,7 @@ class ImageGrid {
       <div class="context-menu-title">Config</div>
       <div class="context-menu-items">
         <div class="context-menu-item" data-action="resize">Resize</div>
+        <div class="context-menu-item" data-action="toggleDevMode">${this.devMode ? 'Disable' : 'Enable'} Dev Mode</div>
         <div class="context-menu-item danger" data-action="delete">Delete</div>
       </div>
     `;
@@ -100,8 +168,13 @@ class ImageGrid {
     // Add click handlers for menu items
     this.contextMenu.addEventListener('click', (e) => {
       const action = e.target.getAttribute('data-action');
-      if (action && this.selectedItem) {
-        this.handleContextMenuAction(action, this.selectedItem);
+      if (action) {
+        // If action is not 'toggleDevMode', it needs a selected item
+        if (action === 'toggleDevMode') {
+          this.handleContextMenuAction(action, null);
+        } else if (this.selectedItem) {
+          this.handleContextMenuAction(action, this.selectedItem);
+        }
       }
       this.hideContextMenu();
     });
@@ -115,7 +188,16 @@ class ImageGrid {
       case 'delete':
         this.deleteImage(item);
         break;
+      case 'toggleDevMode':
+        this.toggleDevMode();
+        break;
     }
+  }
+  
+  toggleDevMode() {
+    this.devMode = !this.devMode;
+    this.saveDevModeState();
+    this.updateDevModeUI();
   }
   
   resizeImage(item) {
@@ -194,7 +276,19 @@ class ImageGrid {
     // Prevent context menu on grid container
     this.gridContainer.addEventListener('contextmenu', (e) => {
       e.preventDefault();
+      // Only show context menu if not an image
+      if (!e.target.closest('.grid-item')) {
+        this.showContextMenu(e, null); // Pass null as no item is selected for grid context menu
+      }
     });
+    
+    // Also prevent context menu on the header area
+    const header = document.querySelector('.container');
+    if (header) {
+      header.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
+    }
   }
   
   handleFileSelect(e) {
@@ -264,7 +358,58 @@ class ImageGrid {
     
     gridItem.appendChild(img);
     
+    // Add rulers for dev mode
+    // Removed ruler creation here
+    
+    gridItem.addEventListener('mouseover', () => {
+      if (this.devMode) {
+        this.updateRulers(gridItem);
+      }
+    });
+    
+    gridItem.addEventListener('mousemove', (e) => {
+      if (this.devMode) {
+        this.updateRulers(gridItem);
+      }
+    });
+    
+    gridItem.addEventListener('mouseout', () => {
+      if (this.devMode) {
+        this.hideRulers();
+      }
+    });
+    
     return gridItem;
+  }
+  
+  hideRulers() {
+    this.rulerX.style.display = 'none';
+    this.rulerY.style.display = 'none';
+  }
+  
+  updateRulers(gridItem) {
+    const rect = gridItem.getBoundingClientRect();
+    const gridRect = this.imageGrid.getBoundingClientRect();
+    
+    // Calculate position relative to the grid (taking pan and scale into account)
+    const gridX = Math.round((rect.left - gridRect.left) / this.scale);
+    const gridY = Math.round((rect.top - gridRect.top) / this.scale);
+    const gridWidth = Math.round(rect.width / this.scale);
+    const gridHeight = Math.round(rect.height / this.scale);
+    
+    // Update X ruler (visual position still viewport-relative)
+    this.rulerX.style.left = rect.left + 'px';
+    this.rulerX.style.top = rect.top + 'px';
+    this.rulerX.style.width = `calc(100vw - ${rect.left}px)`; // Span to the right of the viewport
+    this.rulerX.setAttribute('data-value', `X: ${gridX}px, Width: ${gridWidth}px`);
+    this.rulerX.style.display = 'block';
+    
+    // Update Y ruler (visual position still viewport-relative)
+    this.rulerY.style.left = rect.left + 'px';
+    this.rulerY.style.top = rect.top + 'px';
+    this.rulerY.style.height = `calc(100vh - ${rect.top}px)`; // Span to the bottom of the viewport
+    this.rulerY.setAttribute('data-value', `Y: ${gridY}px, Height: ${gridHeight}px`);
+    this.rulerY.style.display = 'block';
   }
   
   updateGridLayout() {
@@ -278,10 +423,14 @@ class ImageGrid {
     element.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.startDrag(e, element);
+      
+      // Only start drag if the actual image is clicked
+      if (e.target.tagName === 'IMG') {
+        this.startDrag(e, element);
+      }
     });
     
-    // Add right-click context menu
+    // Add right-click context menu (still on the grid-item for the whole area)
     element.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -292,6 +441,9 @@ class ImageGrid {
   startDrag(e, element) {
     this.draggedElement = element;
     element.classList.add('dragging');
+    
+    // Immediately update z-index when dragging starts
+    this.draggedElement.style.zIndex = this.zIndexCounter++;
     
     const rect = element.getBoundingClientRect();
     const gridRect = this.imageGrid.getBoundingClientRect();
@@ -321,6 +473,10 @@ class ImageGrid {
   endDrag() {
     if (this.draggedElement) {
       this.draggedElement.classList.remove('dragging');
+      
+      // Update z-index so the most recently dragged item is on top
+      this.draggedElement.style.zIndex = this.zIndexCounter++;
+      
       this.draggedElement = null;
     }
     
