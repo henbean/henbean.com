@@ -34,11 +34,16 @@ class ImageGrid {
   }
   
   init() {
+    this.profilePic = document.querySelector('.profile-pic');
+    this.profileDropdown = document.querySelector('.profile-dropdown');
     this.setupEventListeners();
     this.createContextMenu();
     this.loadImagesFromServer();
-    this.loadDevModeState(); // Load dev mode state
     this.updateTransform();
+    // Ensure profile dropdown is hidden on initialization
+    if (this.profileDropdown) {
+      this.profileDropdown.classList.remove('show');
+    }
   }
   
   // Load images from the server's JSON file
@@ -69,26 +74,6 @@ class ImageGrid {
     }
   }
   
-  loadDevModeState() {
-    try {
-      const storedDevMode = localStorage.getItem('devMode');
-      if (storedDevMode !== null) {
-        this.devMode = JSON.parse(storedDevMode);
-        this.updateDevModeUI();
-      }
-    } catch (error) {
-      console.error('Error loading dev mode state from local storage:', error);
-    }
-  }
-  
-  saveDevModeState() {
-    try {
-      localStorage.setItem('devMode', JSON.stringify(this.devMode));
-    } catch (error) {
-      console.error('Error saving dev mode state to local storage:', error);
-    }
-  }
-  
   updateDevModeUI() {
     if (this.devMode) {
       document.body.classList.add('dev-mode-enabled');
@@ -97,9 +82,9 @@ class ImageGrid {
       this.hideRulers(); // Hide rulers when dev mode is disabled
     }
     // Update context menu item text
-    const devModeToggleItem = this.contextMenu.querySelector('[data-action="toggleDevMode"]');
-    if (devModeToggleItem) {
-      devModeToggleItem.textContent = this.devMode ? 'Disable Dev Mode' : 'Enable Dev Mode';
+    const devModeCheckbox = this.contextMenu.querySelector('[data-action="toggleDevMode"]');
+    if (devModeCheckbox) {
+      devModeCheckbox.checked = this.devMode;
     }
   }
   
@@ -156,27 +141,34 @@ class ImageGrid {
     this.contextMenu = document.createElement('div');
     this.contextMenu.className = 'context-menu';
     this.contextMenu.innerHTML = `
-      <div class="context-menu-title">Config</div>
       <div class="context-menu-items">
-        <div class="context-menu-item" data-action="resize">Resize</div>
-        <div class="context-menu-item" data-action="toggleDevMode">${this.devMode ? 'Disable' : 'Enable'} Dev Mode</div>
-        <div class="context-menu-item danger" data-action="delete">Delete</div>
+        <div class="context-menu-item" data-action="resize" style="display: none;">Resize</div>
+        <div class="context-menu-item" data-action="addImage">Add Image</div>
+        <label class="context-menu-item context-menu-item-devmode">
+          <span>Dev Mode</span>
+          <input type="checkbox" data-action="toggleDevMode" ${this.devMode ? 'checked' : ''}>
+        </label>
+        <div class="context-menu-item danger" data-action="delete" style="display: none;">Delete</div>
       </div>
     `;
     document.body.appendChild(this.contextMenu);
     
     // Add click handlers for menu items
     this.contextMenu.addEventListener('click', (e) => {
-      const action = e.target.getAttribute('data-action');
+      const target = e.target;
+      const action = target.getAttribute('data-action');
       if (action) {
         // If action is not 'toggleDevMode', it needs a selected item
         if (action === 'toggleDevMode') {
           this.handleContextMenuAction(action, null);
-        } else if (this.selectedItem) {
+          // Prevent menu from closing if only toggling checkbox
+          e.stopPropagation(); 
+        } else if (action === 'addImage') {
+          this.handleContextMenuAction(action, null);
+        } else if (this.selectedItem) { 
           this.handleContextMenuAction(action, this.selectedItem);
         }
       }
-      this.hideContextMenu();
     });
   }
   
@@ -191,12 +183,14 @@ class ImageGrid {
       case 'toggleDevMode':
         this.toggleDevMode();
         break;
+      case 'addImage':
+        this.imageInput.click();
+        break;
     }
   }
   
   toggleDevMode() {
     this.devMode = !this.devMode;
-    this.saveDevModeState();
     this.updateDevModeUI();
   }
   
@@ -223,6 +217,17 @@ class ImageGrid {
     e.preventDefault();
     this.selectedItem = item;
     
+    const resizeItem = this.contextMenu.querySelector('[data-action="resize"]');
+    const deleteItem = this.contextMenu.querySelector('[data-action="delete"]');
+
+    if (item) { // An image item was right-clicked
+      resizeItem.style.display = 'block';
+      deleteItem.style.display = 'block';
+    } else { // Grid or header was right-clicked
+      resizeItem.style.display = 'none';
+      deleteItem.style.display = 'none';
+    }
+
     this.contextMenu.style.left = e.clientX + 'px';
     this.contextMenu.style.top = e.clientY + 'px';
     this.contextMenu.classList.add('show');
@@ -235,10 +240,6 @@ class ImageGrid {
   
   setupEventListeners() {
     // File input
-    this.addImageBtn.addEventListener('click', () => {
-      this.imageInput.click();
-    });
-    
     this.imageInput.addEventListener('change', (e) => {
       this.handleFileSelect(e);
     });
@@ -289,6 +290,18 @@ class ImageGrid {
         e.preventDefault();
       });
     }
+    
+    // Profile picture dropdown
+    this.profilePic.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent document click from closing it immediately
+      this.profileDropdown.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!this.profileDropdown.contains(e.target) && !this.profilePic.contains(e.target)) {
+        this.profileDropdown.classList.remove('show');
+      }
+    });
   }
   
   handleFileSelect(e) {

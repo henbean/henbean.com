@@ -7,10 +7,18 @@
     <link rel="icon" href="images/profile.png">
     <link rel="stylesheet" href="style.css">
   </head>
-  <body class="dev-mode-enabled">
+  <body>
     <div class="container">
       <div class="profile-pic">
-        <img src="images/profile.png" alt="profile picture">
+        <div class="profile-pic-inner-wrapper">
+          <img src="images/profile.png" alt="profile picture">
+        </div>
+        <div class="profile-dropdown">
+          <div class="profile-dropdown-title">henbean</div>
+          <div class="profile-dropdown-item">Socials</div>
+          <div class="profile-dropdown-item">Commissions</div>
+          <div class="profile-dropdown-item">Contact</div>
+        </div>
       </div>
       <div class="header-left">henbean.com</div>
       <div class="border"></div>
@@ -25,7 +33,6 @@
     
     <!-- File input for adding images -->
     <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
-    <button id="addImageBtn" class="add-image-btn">+ Add Images</button>
     
     <script src="script.js" type="text/javascript"></script>
   </body>
