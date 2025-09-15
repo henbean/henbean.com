@@ -30,12 +30,19 @@ class ImageGrid {
     this.rulerY.className = 'ruler-y';
     document.body.appendChild(this.rulerY);
     
+    this.profilePic = document.querySelector('.profile-pic');
+    this.profileDropdown = document.querySelector('.profile-dropdown');
+
+    // Modal elements
+    this.modalOverlay = document.getElementById('modalOverlay');
+    this.modalTitle = document.getElementById('modalTitle');
+    this.modalText = document.getElementById('modalText');
+    this.closeModalBtn = document.getElementById('closeModal');
+
     this.init();
   }
   
   init() {
-    this.profilePic = document.querySelector('.profile-pic');
-    this.profileDropdown = document.querySelector('.profile-dropdown');
     this.setupEventListeners();
     this.createContextMenu();
     this.loadImagesFromServer();
@@ -238,6 +245,42 @@ class ImageGrid {
     this.selectedItem = null;
   }
   
+  openModal(title) {
+    this.modalTitle.textContent = title;
+    let content = "placehold"; // Default placeholder
+
+    if (title === "Socials") {
+      content = `
+        <ul>
+          <li><a href="https://pinterest.com/hen_bean/_profile" target="_blank">pinterest.com/hen_bean/_profile</a></li>
+          <li><a href="https://github.com/henbean" target="_blank">github.com/henbean</a></li>
+          <li><a href="https://x.com/hen__bean" target="_blank">twitter.com/hen__bean</a></li>
+          <li><a href="https://www.instagram.com/hen_bean/" target="_blank">instagram.com/hen_bean</a></li>
+          <li><a href="https://bsky.app/profile/henbean.bsky.social" target="_blank">bsky.app/profile/henbean.bsky.social</a></li>
+          <li><a href="https://www.youtube.com/channel/UCgAfQgM16ddHpCBBfIv70eg" target="_blank">youtube.com/channel/UCgAfQgM16ddHpCBBfIv70eg</a></li>
+        </ul>
+      `;
+    } else if (title === "Commissions") {
+      content = `
+        <p>if your interested, drop an email <a href="mailto:henbean22@gmail.com">here</a></p>
+      `;
+    } else if (title === "Contact") {
+      content = `
+        <p>You can reach me at:</p>
+        <p>Email: <a href="henbean22@gmail.com">henbean22@gmail.com</a></p>
+      `;
+    }
+
+    this.modalText.innerHTML = content; // Use innerHTM
+    this.modalOverlay.classList.add('show');
+    document.body.classList.add('modal-open');
+  }
+
+  closeModal() {
+    this.modalOverlay.classList.remove('show');
+    document.body.classList.remove('modal-open');
+  }
+
   setupEventListeners() {
     // File input
     this.imageInput.addEventListener('change', (e) => {
@@ -300,6 +343,30 @@ class ImageGrid {
     document.addEventListener('click', (e) => {
       if (!this.profileDropdown.contains(e.target) && !this.profilePic.contains(e.target)) {
         this.profileDropdown.classList.remove('show');
+      }
+    });
+    
+    // Profile dropdown menu item clicks
+    const dropdownItems = this.profileDropdown.querySelectorAll('.profile-dropdown-item');
+    dropdownItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        const action = e.target.textContent;
+        this.openModal(action);
+        this.profileDropdown.classList.remove('show'); // Hide dropdown after selection
+      });
+    });
+
+    // Close modal event listeners
+    this.closeModalBtn.addEventListener('click', () => this.closeModal());
+    this.modalOverlay.addEventListener('click', (e) => {
+      if (e.target === this.modalOverlay) {
+        this.closeModal();
+      }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modalOverlay.classList.contains('show')) {
+        this.closeModal();
       }
     });
   }

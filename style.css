@@ -1,5 +1,4 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;1,100&display=swap');
 
 body {
   margin: 0;
@@ -33,24 +32,6 @@ body {
     linear-gradient(240deg, rgb(100, 100, 100), transparent 50%);
 }
 
-.header-left {
-  font-family: "Raleway", sans-serif;
-  font-size: 48px;
-  color: #787878;
-  display: flex;
-  text-align: center;
-  align-items: center;
-  margin-top: -20px;
-  margin-left: 30px;
-  margin-bottom: -20px;
-  text-shadow: 10px -6px 50px rgb(100, 100, 100);
-  background:
-    linear-gradient(#c6c6c6, #161616);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
 .profile-pic {
   width: 60px;
   height: 60px;
@@ -59,7 +40,7 @@ body {
   border-color: #ffffff;
   cursor: pointer;
   position: absolute;
-  top: 28px;
+  top: 16px;
   right: 45px;
   box-shadow: 2px -6px 30px 2px rgb(72, 72, 72);
 }
@@ -75,7 +56,7 @@ body {
 }
 
 .profile-pic-inner-wrapper:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .profile-pic-inner-wrapper img {
@@ -126,6 +107,105 @@ body {
 .profile-dropdown-item:hover {
   background: #161616;
   color: #fff;
+}
+
+/* Modal Window Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20; /* Higher than other elements */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease-in-out, visibility 0.1s ease-in-out;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  background: #222;
+  border: 2px solid #333;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+  width: 520px;
+  max-height: 80vh; /* Max height relative to viewport */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transform: scale(0.9);
+  transition: transform 0.1s ease-in-out;
+}
+
+.modal-overlay.show .modal-content {
+  transform: scale(1);
+}
+
+.modal-header {
+  background: #333;
+  padding-left: 10px;
+  padding-right: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #555;
+}
+
+.modal-header h3 {
+  color: #fff;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 16px;
+}
+
+.close-button {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 12px;
+  color: #ccc;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.modal-body p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.modal-body a {
+  color: #8c8c8c; /* Lighter color for better readability */
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+.modal-body a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Blur effect for body when modal is active */
+body.modal-open > *:not(.modal-overlay) {
+  filter: blur(1px);
+  transition: filter 0.1s ease-in-out;
 }
 
 /* Grid container styles */
