@@ -109,6 +109,8 @@ class ImageGrid {
     gridItem.dataset.originalName = imageData.originalName;
     gridItem.dataset.title = imageData.title || 'Untitled';
     gridItem.dataset.description = imageData.description || 'No description available.';
+    gridItem.dataset.x = imageData.x; // Store initial x
+    gridItem.dataset.y = imageData.y; // Store initial y
     
     const img = document.createElement('img');
     img.src = `images/${imageData.filename}`; // Load from images folder
@@ -424,6 +426,8 @@ class ImageGrid {
     gridItem.dataset.originalName = file.name || 'image';
     gridItem.dataset.title = file.name || 'Untitled'; // Default title
     gridItem.dataset.description = 'No description available.'; // Default description
+    gridItem.dataset.x = 0; // Default x for new image
+    gridItem.dataset.y = 0; // Default y for new image
     
     const img = document.createElement('img');
     img.src = imageSrc;
@@ -598,17 +602,19 @@ class ImageGrid {
     this.draggedDistance = 0; // Reset distance for new drag
     
     const gridContainerRect = this.gridContainer.getBoundingClientRect();
-    const currentGridItemLeft = parseFloat(element.style.left) || 0;
-    const currentGridItemTop = parseFloat(element.style.top) || 0;
+    
+    // Get the untransformed position from dataset
+    const currentGridItemX = parseFloat(element.dataset.x) || 0;
+    const currentGridItemY = parseFloat(element.dataset.y) || 0;
  
-    // Calculate mouse position relative to the imageGrid's untransformed origin
+    // Calculate mouse position relative to the gridContainer, then reverse pan and scale
     const mouseXInGridCoords = (e.clientX - gridContainerRect.left - this.panX) / this.scale;
     const mouseYInGridCoords = (e.clientY - gridContainerRect.top - this.panY) / this.scale;
  
     // dragOffset.x will be the distance from the mouse click to the top-left of the element,
     // all in the imageGrid's untransformed coordinate system.
-    this.dragOffset.x = mouseXInGridCoords - currentGridItemLeft;
-    this.dragOffset.y = mouseYInGridCoords - currentGridItemTop;
+    this.dragOffset.x = mouseXInGridCoords - currentGridItemX;
+    this.dragOffset.y = mouseYInGridCoords - currentGridItemY;
     
     document.addEventListener('mousemove', this.handleDrag.bind(this));
     document.addEventListener('mouseup', this.endDrag.bind(this));
@@ -636,6 +642,10 @@ class ImageGrid {
     this.draggedElement.style.left = newLeft + 'px';
     this.draggedElement.style.top = newTop + 'px';
     this.draggedElement.style.margin = '0';
+    
+    // Update dataset with new untransformed position
+    this.draggedElement.dataset.x = newLeft;
+    this.draggedElement.dataset.y = newTop;
   }
   
   endDrag() {
