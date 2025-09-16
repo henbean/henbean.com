@@ -17,6 +17,12 @@ class ImageGrid {
     this.selectedItem = null;
     this.imageCounter = 0;
     this.devMode = false; // Add devMode state
+    this.isDraggingImage = false; // Flag to differentiate click from drag
+    this.draggedDistance = 0; // Track distance dragged
+    this.initialDragX = 0;
+    this.initialDragY = 0;
+    this.dragThreshold = 5; // Minimum pixels to consider it a drag
+    this.wasDragged = false; // Flag to prevent click after drag
     
     // For managing z-index of overlapping images
     this.zIndexCounter = 10;
@@ -128,7 +134,7 @@ class ImageGrid {
     gridItem.appendChild(infoOverlay);
 
     gridItem.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'A') { // Don't toggle if clicking a link inside the description
+      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
       }
     });
@@ -277,12 +283,11 @@ class ImageGrid {
       `;
     } else if (title === "Commissions") {
       content = `
-        <p>if your interested, drop an email <a href="mailto:henbean22@gmail.com">here</a></p>
+        <p>if your interested, drop an email at henbean@henbean.com</p>
       `;
     } else if (title === "Contact") {
       content = `
-        <p>You can reach me at:</p>
-        <p>Email: <a href="henbean22@gmail.com">henbean22@gmail.com</a></p>
+        <p>you can reach me at henbean@henbean.com</p>
       `;
     }
 
@@ -468,7 +473,7 @@ class ImageGrid {
     gridItem.appendChild(infoOverlay);
 
     gridItem.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'A') { // Don't toggle if clicking a link inside the description
+      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
       }
     });
@@ -587,12 +592,23 @@ class ImageGrid {
     
     // Immediately update z-index when dragging starts
     this.draggedElement.style.zIndex = this.zIndexCounter++;
+    this.isDraggingImage = true; // Set flag when dragging starts
+    this.initialDragX = e.clientX;
+    this.initialDragY = e.clientY;
+    this.draggedDistance = 0; // Reset distance for new drag
     
-    const rect = element.getBoundingClientRect();
-    const gridRect = this.imageGrid.getBoundingClientRect();
-    
-    this.dragOffset.x = e.clientX - rect.left;
-    this.dragOffset.y = e.clientY - rect.top;
+    const gridContainerRect = this.gridContainer.getBoundingClientRect();
+    const currentGridItemLeft = parseFloat(element.style.left) || 0;
+    const currentGridItemTop = parseFloat(element.style.top) || 0;
+ 
+    // Calculate mouse position relative to the imageGrid's untransformed origin
+    const mouseXInGridCoords = (e.clientX - gridContainerRect.left - this.panX) / this.scale;
+    const mouseYInGridCoords = (e.clientY - gridContainerRect.top - this.panY) / this.scale;
+ 
+    // dragOffset.x will be the distance from the mouse click to the top-left of the element,
+    // all in the imageGrid's untransformed coordinate system.
+    this.dragOffset.x = mouseXInGridCoords - currentGridItemLeft;
+    this.dragOffset.y = mouseYInGridCoords - currentGridItemTop;
     
     document.addEventListener('mousemove', this.handleDrag.bind(this));
     document.addEventListener('mouseup', this.endDrag.bind(this));
@@ -603,13 +619,22 @@ class ImageGrid {
     
     e.preventDefault();
     
-    const gridRect = this.imageGrid.getBoundingClientRect();
-    const x = (e.clientX - gridRect.left - this.dragOffset.x) / this.scale;
-    const y = (e.clientY - gridRect.top - this.dragOffset.y) / this.scale;
+    const gridContainerRect = this.gridContainer.getBoundingClientRect();
     
+    // mouse position relative to the imageGrid's untransformed origin
+    const mouseXInGridCoords = (e.clientX - gridContainerRect.left - this.panX) / this.scale;
+    const mouseYInGridCoords = (e.clientY - gridContainerRect.top - this.panY) / this.scale;
+ 
+    // New position for gridItem.style.left/top
+    const newLeft = mouseXInGridCoords - this.dragOffset.x;
+    const newTop = mouseYInGridCoords - this.dragOffset.y;
+    
+    // Update dragged distance
+    this.draggedDistance += Math.sqrt(e.movementX**2 + e.movementY**2);
+
     this.draggedElement.style.position = 'absolute';
-    this.draggedElement.style.left = x + 'px';
-    this.draggedElement.style.top = y + 'px';
+    this.draggedElement.style.left = newLeft + 'px';
+    this.draggedElement.style.top = newTop + 'px';
     this.draggedElement.style.margin = '0';
   }
   
@@ -621,6 +646,12 @@ class ImageGrid {
       this.draggedElement.style.zIndex = this.zIndexCounter++;
       
       this.draggedElement = null;
+      this.isDraggingImage = false; // Reset flag when dragging ends
+      
+      if (this.draggedDistance > this.dragThreshold) {
+        this.wasDragged = true;
+        setTimeout(() => { this.wasDragged = false; }, 50);
+      }
     }
     
     document.removeEventListener('mousemove', this.handleDrag.bind(this));
