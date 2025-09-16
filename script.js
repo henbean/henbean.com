@@ -26,6 +26,7 @@ class ImageGrid {
     
     // For managing z-index of overlapping images
     this.zIndexCounter = 10;
+    this.BASE_IMAGE_DIMENSION = 400; // Define a base dimension for scale calculation
     
     // Global rulers for dev mode
     this.rulerX = document.createElement('div');
@@ -111,6 +112,7 @@ class ImageGrid {
     gridItem.dataset.description = imageData.description || 'No description available.';
     gridItem.dataset.x = imageData.x; // Store initial x
     gridItem.dataset.y = imageData.y; // Store initial y
+    gridItem.dataset.scale = imageData.scale || 1; // Store initial scale
     
     const img = document.createElement('img');
     img.src = `images/${imageData.filename}`; // Load from images folder
@@ -120,9 +122,6 @@ class ImageGrid {
     gridItem.style.position = 'absolute';
     gridItem.style.left = imageData.x + 'px';
     gridItem.style.top = imageData.y + 'px';
-    gridItem.style.width = imageData.width + 'px'; // Set width from imageData
-    gridItem.style.height = imageData.height + 'px'; // Set height from imageData
-    gridItem.style.margin = '0';
     
     gridItem.appendChild(img);
     this.imageGrid.appendChild(gridItem);
@@ -137,6 +136,28 @@ class ImageGrid {
     `;
     gridItem.appendChild(infoOverlay);
 
+    // Adjust info overlay size and position after image loads
+    img.onload = () => {
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+      const aspectRatio = naturalWidth / naturalHeight;
+
+      let newWidth = 0;
+      let newHeight = 0;
+      const currentScale = parseFloat(gridItem.dataset.scale);
+
+      if (naturalWidth > naturalHeight) {
+        newWidth = this.BASE_IMAGE_DIMENSION * currentScale;
+        newHeight = newWidth / aspectRatio;
+      } else {
+        newHeight = this.BASE_IMAGE_DIMENSION * currentScale;
+        newWidth = newHeight * aspectRatio;
+      }
+
+      gridItem.style.width = newWidth + 'px';
+      gridItem.style.height = newHeight + 'px';
+    };
+    
     gridItem.addEventListener('click', (e) => {
       if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
@@ -430,39 +451,11 @@ class ImageGrid {
     gridItem.dataset.description = 'No description available.'; // Default description
     gridItem.dataset.x = 0; // Default x for new image
     gridItem.dataset.y = 0; // Default y for new image
+    gridItem.dataset.scale = 1; // Default scale for new image
     
     const img = document.createElement('img');
     img.src = imageSrc;
     img.alt = 'Grid image';
-    
-    // Calculate size based on image resolution
-    img.onload = () => {
-      const baseSize = 200; // Base grid cell size
-      const minSize = 100;  // Minimum size
-      const maxSize = 400;  // Maximum size
-      
-      // Calculate total pixels
-      const totalPixels = img.naturalWidth * img.naturalHeight;
-      
-      // Calculate size multiplier based on resolution
-      // Higher resolution = larger size
-      let sizeMultiplier = 1;
-      if (totalPixels > 0) {
-        // Use logarithmic scale to prevent extremely large images
-        sizeMultiplier = Math.log10(totalPixels / 100000) + 1;
-        sizeMultiplier = Math.max(0.5, Math.min(2, sizeMultiplier)); // Clamp between 0.5x and 2x
-      }
-      
-      const calculatedSize = Math.round(baseSize * sizeMultiplier);
-      const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
-      
-      // Set the grid item size
-      gridItem.style.width = finalSize + 'px';
-      gridItem.style.height = finalSize + 'px';
-      
-      // Update grid layout if needed
-      this.updateGridLayout();
-    };
     
     gridItem.appendChild(img);
     
@@ -478,42 +471,33 @@ class ImageGrid {
     `;
     gridItem.appendChild(infoOverlay);
 
-    gridItem.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
-        infoOverlay.classList.toggle('show');
-      }
-    });
-
-    // Recalculate size based on image resolution after it loads
+    // Adjust info overlay size and position after image loads
     img.onload = () => {
-      const minSize = 100; // Minimum size
-      const maxSize = 400; // Maximum size
-      
-      const aspectRatio = img.naturalWidth / img.naturalHeight;
-      let newWidth, newHeight;
+      const naturalWidth = img.naturalWidth;
+      const naturalHeight = img.naturalHeight;
+      const aspectRatio = naturalWidth / naturalHeight;
 
-      if (img.naturalWidth > img.naturalHeight) {
-        newWidth = maxSize;
-        newHeight = maxSize / aspectRatio;
+      let newWidth = 0;
+      let newHeight = 0;
+      const currentScale = parseFloat(gridItem.dataset.scale);
+
+      if (naturalWidth > naturalHeight) {
+        newWidth = this.BASE_IMAGE_DIMENSION * currentScale;
+        newHeight = newWidth / aspectRatio;
       } else {
-        newHeight = maxSize;
-        newWidth = maxSize * aspectRatio;
-      }
-
-      newWidth = Math.max(minSize, Math.min(maxSize, newWidth));
-      newHeight = Math.max(minSize, Math.min(maxSize, newHeight));
-
-      if (newWidth === maxSize && newHeight < minSize) {
-        newHeight = minSize;
-        newWidth = minSize * aspectRatio;
-      } else if (newHeight === maxSize && newWidth < minSize) {
-        newWidth = minSize;
-        newHeight = minSize / aspectRatio;
+        newHeight = this.BASE_IMAGE_DIMENSION * currentScale;
+        newWidth = newHeight * aspectRatio;
       }
 
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
     };
+
+    gridItem.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
+        infoOverlay.classList.toggle('show');
+      }
+    });
 
     gridItem.addEventListener('mouseover', () => {
       if (this.devMode) {

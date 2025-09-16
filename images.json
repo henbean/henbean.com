@@ -7,8 +7,7 @@
         "filename": "title.png",
         "x": 400,
         "y": 0,
-        "width": 400,
-        "height": 400,
+        "scale": 1,
         "originalName": "title.png",
         "title": "title",
         "description": "description"
@@ -18,8 +17,7 @@
         "filename": "wallpaper_1.png",
         "x": 400,
         "y": 400,
-        "width": 400,
-        "height": 400,
+        "scale": 1,
         "originalName": "wallpaper_1.png",
         "title": "wallpaper 1",
         "description": "(xx.xx.2025) one of the first pieces i liked, made for my desktop"
