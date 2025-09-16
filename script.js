@@ -112,8 +112,6 @@ class ImageGrid {
     gridItem.style.position = 'absolute';
     gridItem.style.left = imageData.x + 'px';
     gridItem.style.top = imageData.y + 'px';
-    gridItem.style.width = imageData.width + 'px';
-    gridItem.style.height = imageData.height + 'px';
     gridItem.style.margin = '0';
     
     gridItem.appendChild(img);
@@ -474,6 +472,37 @@ class ImageGrid {
         infoOverlay.classList.toggle('show');
       }
     });
+
+    // Recalculate size based on image resolution after it loads
+    img.onload = () => {
+      const minSize = 100; // Minimum size
+      const maxSize = 400; // Maximum size
+      
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      let newWidth, newHeight;
+
+      if (img.naturalWidth > img.naturalHeight) {
+        newWidth = maxSize;
+        newHeight = maxSize / aspectRatio;
+      } else {
+        newHeight = maxSize;
+        newWidth = maxSize * aspectRatio;
+      }
+
+      newWidth = Math.max(minSize, Math.min(maxSize, newWidth));
+      newHeight = Math.max(minSize, Math.min(maxSize, newHeight));
+
+      if (newWidth === maxSize && newHeight < minSize) {
+        newHeight = minSize;
+        newWidth = minSize * aspectRatio;
+      } else if (newHeight === maxSize && newWidth < minSize) {
+        newWidth = minSize;
+        newHeight = minSize / aspectRatio;
+      }
+
+      gridItem.style.width = newWidth + 'px';
+      gridItem.style.height = newHeight + 'px';
+    };
 
     gridItem.addEventListener('mouseover', () => {
       if (this.devMode) {
