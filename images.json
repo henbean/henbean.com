@@ -2,16 +2,28 @@
 
 {
     "images": [
+      
       {
-        "id": "art_0",
-        "filename": "wallpaper_1.png",
-        "x": 0,
+        "id": "title",
+        "filename": "title.png",
+        "x": 400,
         "y": 0,
+        "width": 400,
+        "height": 400,
+        "originalName": "title.png",
+        "title": "title",
+        "description": "description"
+      }
+      {
+        "id": "piece_0",
+        "filename": "wallpaper_1.png",
+        "x": 400,
+        "y": 400,
         "width": 400,
         "height": 400,
         "originalName": "wallpaper_1.png",
         "title": "wallpaper 1",
-        "description": "one of the first pieces i like"
+        "description": "(xx.xx.2025) one of the first pieces i liked, made for my desktop"
       }
     ],
     "gridState": {
