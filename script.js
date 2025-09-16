@@ -120,6 +120,8 @@ class ImageGrid {
     gridItem.style.position = 'absolute';
     gridItem.style.left = imageData.x + 'px';
     gridItem.style.top = imageData.y + 'px';
+    gridItem.style.width = imageData.width + 'px'; // Set width from imageData
+    gridItem.style.height = imageData.height + 'px'; // Set height from imageData
     gridItem.style.margin = '0';
     
     gridItem.appendChild(img);
