@@ -9,7 +9,9 @@
         "y": 0,
         "width": 400,
         "height": 400,
-        "originalName": "wallpaper_1.png"
+        "originalName": "wallpaper_1.png",
+        "title": "wallpaper 1",
+        "description": "one of the first pieces i like"
       }
     ],
     "gridState": {

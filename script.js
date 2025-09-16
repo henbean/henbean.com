@@ -101,6 +101,8 @@ class ImageGrid {
     gridItem.className = 'grid-item';
     gridItem.dataset.imageId = imageData.id;
     gridItem.dataset.originalName = imageData.originalName;
+    gridItem.dataset.title = imageData.title || 'Untitled';
+    gridItem.dataset.description = imageData.description || 'No description available.';
     
     const img = document.createElement('img');
     img.src = `images/${imageData.filename}`; // Load from images folder
@@ -118,6 +120,21 @@ class ImageGrid {
     this.imageGrid.appendChild(gridItem);
     this.setupDragAndDrop(gridItem);
     
+    // Add info overlay
+    const infoOverlay = document.createElement('div');
+    infoOverlay.className = 'grid-item-info-overlay';
+    infoOverlay.innerHTML = `
+      <h4 class="grid-item-title">${imageData.title || 'Untitled'}</h4>
+      <p class="grid-item-description">${imageData.description || 'No description available.'}</p>
+    `;
+    gridItem.appendChild(infoOverlay);
+
+    gridItem.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'A') { // Don't toggle if clicking a link inside the description
+        infoOverlay.classList.toggle('show');
+      }
+    });
+
     // Update counter to avoid ID conflicts
     const idNum = parseInt(imageData.id.replace('img_', ''));
     if (idNum >= this.imageCounter) {
@@ -402,6 +419,8 @@ class ImageGrid {
     gridItem.dataset.imageId = imageId;
     gridItem.dataset.filename = filename;
     gridItem.dataset.originalName = file.name || 'image';
+    gridItem.dataset.title = file.name || 'Untitled'; // Default title
+    gridItem.dataset.description = 'No description available.'; // Default description
     
     const img = document.createElement('img');
     img.src = imageSrc;
@@ -441,6 +460,21 @@ class ImageGrid {
     // Add rulers for dev mode
     // Removed ruler creation here
     
+    // Add info overlay
+    const infoOverlay = document.createElement('div');
+    infoOverlay.className = 'grid-item-info-overlay';
+    infoOverlay.innerHTML = `
+      <h4 class="grid-item-title">${file.name || 'Untitled'}</h4>
+      <p class="grid-item-description">No description available.</p>
+    `;
+    gridItem.appendChild(infoOverlay);
+
+    gridItem.addEventListener('click', (e) => {
+      if (e.target.tagName !== 'A') { // Don't toggle if clicking a link inside the description
+        infoOverlay.classList.toggle('show');
+      }
+    });
+
     gridItem.addEventListener('mouseover', () => {
       if (this.devMode) {
         this.updateRulers(gridItem);
