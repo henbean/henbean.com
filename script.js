@@ -164,14 +164,7 @@ class ImageGrid {
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
       
-      if (gridItem.dataset.fixedToTop === 'true') {
-        gridItem.style.zIndex = 100; // Ensure fixed images are on top
-        // Optionally, calculate fixedContentHeight here once dimensions are known
-        // this.fixedContentHeight += gridItem.offsetHeight; // This needs careful management for initial load
-      } else { // For dynamic images, update the offset
-        this.dynamicContentOffsetY += gridItem.offsetHeight + 20; // Add some padding
-      }
-      
+      // Removed z-index for fixed images as per user request
       this.imagesLoading--; // Decrement counter
       if (this.imagesLoading === 0) {
         this.imageGrid.dispatchEvent(new Event('allImagesLoaded'));
@@ -240,22 +233,28 @@ class ImageGrid {
       if (item.dataset.fixedToTop === 'true') {
         this.fixedContentHeight += item.offsetHeight;
       } else {
-        const itemTop = parseFloat(item.style.top);
+        const itemTop = parseFloat(item.style.top) || 0;
         const itemHeight = item.offsetHeight;
         maxDynamicY = Math.max(maxDynamicY, itemTop + itemHeight);
       }
     });
     
-    // Ensure dynamicContentOffsetY starts where fixed content ends, or after existing dynamic images
-    this.dynamicContentOffsetY = Math.max(this.fixedContentHeight, maxDynamicY);
+    // dynamicContentOffsetY should be the max of where fixed content ends or the lowest dynamic item.
+    // We add a padding (e.g., 20px) to ensure there's space for new items.
+    this.dynamicContentOffsetY = Math.max(this.fixedContentHeight, maxDynamicY + 20); 
     
-    // Also update the initial position of dynamic images, they should be offset by fixedContentHeight
+    // Also ensure all dynamic images are positioned relative to fixedContentHeight
     allGridItems.forEach(item => {
       if (item.dataset.fixedToTop !== 'true') {
-        const currentX = parseFloat(item.style.left) || 0;
-        const currentY = parseFloat(item.style.top) || 0;
-        item.style.top = (currentY + this.fixedContentHeight) + 'px';
-        item.dataset.y = (currentY + this.fixedContentHeight); // Update dataset as well
+        const currentX = parseFloat(item.dataset.x) || 0;
+        const currentY = parseFloat(item.dataset.y) || 0;
+        
+        // If an image's top position is less than the fixed content height, it means it's overlapping
+        // or not correctly offset. We adjust its visual and dataset Y to be below fixed content.
+        if (currentY < this.fixedContentHeight) {
+          item.style.top = (currentY + this.fixedContentHeight) + 'px';
+          item.dataset.y = (currentY + this.fixedContentHeight); // Update dataset as well
+        }
       }
     });
     this.updateGridLayout();
@@ -555,10 +554,14 @@ class ImageGrid {
     img.alt = 'Grid image';
     
     // Set initial position for new (non-fixed) images
+    const initialX = 0;
+    const initialY = this.dynamicContentOffsetY; // Use dynamicContentOffsetY directly
     gridItem.style.position = 'absolute';
-    gridItem.style.left = 0 + 'px'; // New images start at x=0
-    gridItem.style.top = (this.fixedContentHeight + this.dynamicContentOffsetY) + 'px';
+    gridItem.style.left = initialX + 'px';
+    gridItem.style.top = initialY + 'px';
     gridItem.style.margin = '0';
+    gridItem.dataset.x = initialX; // Store initial x in dataset
+    gridItem.dataset.y = initialY; // Store initial y in dataset
 
     gridItem.appendChild(img);
     
@@ -595,11 +598,10 @@ class ImageGrid {
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
       
-      if (gridItem.dataset.fixedToTop === 'true') {
-        gridItem.style.zIndex = 100; // Ensure fixed images are on top
-      } else { // For dynamic images, update the offset
-        // Update dynamicContentOffsetY after the new image is rendered
-        this.dynamicContentOffsetY = Math.max(this.dynamicContentOffsetY, parseFloat(gridItem.style.top) + gridItem.offsetHeight + 20); // Add some padding
+      // Removed z-index for fixed images as per user request
+      // Update dynamicContentOffsetY after the new image is rendered
+      if (gridItem.dataset.fixedToTop !== 'true') {
+        this.dynamicContentOffsetY = Math.max(this.dynamicContentOffsetY, initialY + gridItem.offsetHeight + 20); // Update based on its actual rendered position
         this.updateGridLayout(); // Update grid layout after adding a new dynamic image
       }
     };
@@ -669,10 +671,8 @@ class ImageGrid {
   }
   
   setupDragAndDrop(element) {
-    if (element.dataset.fixedToTop === 'true') {
-      element.style.cursor = 'default'; // Change cursor for non-draggable items
-      return; // Do not set up drag and drop for fixed images
-    }
+    // Removed condition to prevent dragging fixedToTop images as per user request
+    element.style.cursor = 'grab'; // Restore grab cursor for all draggable items
     element.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
