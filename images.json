@@ -13,6 +13,16 @@
         "description": "description"
       },
       {
+        "id": "description",
+        "filename": "description.png",
+        "x": 220,
+        "y": 220,
+        "scale": 1.4,
+        "originalName": "description.png",
+        "title": "description",
+        "description": "description"
+      },
+      {
         "id": "instructions",
         "filename": "instructions.png",
         "x": 350,
