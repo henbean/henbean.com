@@ -195,7 +195,7 @@ class ImageGrid {
     this.contextMenu.className = 'context-menu';
     this.contextMenu.innerHTML = `
       <div class="context-menu-items">
-        <div class="context-menu-item" data-action="resize" style="display: none;">Resize</div>
+        <div class="context-menu-item" data-action="scale" style="display: none;">Scale</div>
         <div class="context-menu-item" data-action="addImage">Add Image</div>
         <label class="context-menu-item context-menu-item-devmode">
           <span>Dev Mode</span>
@@ -227,8 +227,8 @@ class ImageGrid {
   
   handleContextMenuAction(action, item) {
     switch (action) {
-      case 'resize':
-        this.resizeImage(item);
+      case 'scale':
+        this.scaleImage(item);
         break;
       case 'delete':
         this.deleteImage(item);
@@ -247,15 +247,40 @@ class ImageGrid {
     this.updateDevModeUI();
   }
   
-  resizeImage(item) {
-    const currentSize = parseInt(item.style.width) || 200;
-    const newSize = prompt(`Enter new size (current: ${currentSize}px):`, currentSize);
+  scaleImage(item) {
+    const currentScale = parseFloat(item.dataset.scale) || 1;
+    const newScaleStr = prompt(`Enter new scale (current: ${currentScale}):`, currentScale);
     
-    if (newSize && !isNaN(newSize) && newSize > 0) {
-      const size = Math.max(50, Math.min(500, parseInt(newSize))); // Limit between 50-500px
-      item.style.width = size + 'px';
-      item.style.height = size + 'px';
-      this.updateGridLayout();
+    if (newScaleStr !== null) { // User didn't cancel
+      const newScale = parseFloat(newScaleStr);
+      if (!isNaN(newScale) && newScale > 0.1 && newScale < 10) { // Basic validation
+        item.dataset.scale = newScale; // Update dataset
+        
+        // Find the img element within the gridItem to get natural dimensions
+        const imgElement = item.querySelector('img');
+        if (imgElement) {
+          const naturalWidth = imgElement.naturalWidth;
+          const naturalHeight = imgElement.naturalHeight;
+          const aspectRatio = naturalWidth / naturalHeight;
+
+          let newWidth = 0;
+          let newHeight = 0;
+
+          if (naturalWidth > naturalHeight) {
+            newWidth = this.BASE_IMAGE_DIMENSION * newScale;
+            newHeight = newWidth / aspectRatio;
+          } else {
+            newHeight = this.BASE_IMAGE_DIMENSION * newScale;
+            newWidth = newHeight * aspectRatio;
+          }
+
+          item.style.width = newWidth + 'px';
+          item.style.height = newHeight + 'px';
+        }
+        this.updateGridLayout(); // Re-render grid if needed
+      } else {
+        alert('Please enter a valid number for scale (e.g., 0.5 to 10).');
+      }
     }
   }
   
@@ -270,14 +295,14 @@ class ImageGrid {
     e.preventDefault();
     this.selectedItem = item;
     
-    const resizeItem = this.contextMenu.querySelector('[data-action="resize"]');
+    const scaleItem = this.contextMenu.querySelector('[data-action="scale"]');
     const deleteItem = this.contextMenu.querySelector('[data-action="delete"]');
 
     if (item) { // An image item was right-clicked
-      resizeItem.style.display = 'block';
+      scaleItem.style.display = 'block';
       deleteItem.style.display = 'block';
     } else { // Grid or header was right-clicked
-      resizeItem.style.display = 'none';
+      scaleItem.style.display = 'none';
       deleteItem.style.display = 'none';
     }
 
