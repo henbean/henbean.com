@@ -28,7 +28,7 @@ class ImageGrid {
     this.dynamicContentOffsetY = 0; // Offset for new images added below fixed content
     this.imagesLoading = 0; // Counter for images still loading
     
-    this.DEFAULT_GRID_HEIGHT = 2000; // grid height
+    this.DEFAULT_GRID_HEIGHT = 1500; // Define a default height for the grid
     this.gridHeight = this.DEFAULT_GRID_HEIGHT; // Current grid height
 
     // For managing z-index of overlapping images
@@ -174,7 +174,7 @@ class ImageGrid {
         this.imageGrid.dispatchEvent(new Event('allImagesLoaded'));
       }
     };
-    
+
     gridItem.addEventListener('click', (e) => {
       if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
@@ -293,7 +293,7 @@ class ImageGrid {
         <div class="context-menu-item" data-action="scale" style="display: none;">Scale</div>
         <div class="context-menu-item" data-action="addImage">Add Image</div>
         <label class="context-menu-item context-menu-item-devmode">
-          <span>Rulers</span>
+          <span>Dev Mode</span>
           <input type="checkbox" data-action="toggleDevMode" ${this.devMode ? 'checked' : ''}>
         </label>
         <div class="context-menu-item danger" data-action="delete" style="display: none;">Delete</div>
@@ -587,7 +587,7 @@ class ImageGrid {
     gridItem.style.margin = '0';
     gridItem.dataset.x = initialX; // Store initial x in dataset
     gridItem.dataset.y = initialY; // Store initial y in dataset
-
+    
     gridItem.appendChild(img);
     
     // Add rulers for dev mode
@@ -873,5 +873,5 @@ class ImageGrid {
 
 // Initialize the image grid when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-  new ImageGrid();
+  window.imageGrid = new ImageGrid(); // Assign to window for console access
 });
