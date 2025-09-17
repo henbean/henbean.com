@@ -639,6 +639,8 @@ class ImageGrid {
             const newY = currentY + newImageHeight + padding;
             item.style.top = newY + 'px';
             item.dataset.y = newY; // Update dataset
+            // CRITICAL FIX: Update distanceFromBottom for pushed-down images
+            item.dataset.distanceFromBottom = this.gridHeight - (newY + item.offsetHeight);
           }
         });
         
