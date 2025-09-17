@@ -13,6 +13,16 @@
         "description": "description"
       },
       {
+        "id": "instructions",
+        "filename": "instructions.png",
+        "x": 4,
+        "y": 80,
+        "scale": 1,
+        "originalName": "instructions.png",
+        "title": "instructions",
+        "description": "click and drag to pan, scroll to zoom in/out"
+      },
+      {
         "id": "piece_0",
         "filename": "wallpaper_1.png",
         "x": 10,
