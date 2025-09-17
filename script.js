@@ -28,7 +28,7 @@ class ImageGrid {
     this.dynamicContentOffsetY = 0; // Offset for new images added below fixed content
     this.imagesLoading = 0; // Counter for images still loading
     
-    this.DEFAULT_GRID_HEIGHT = 1500; // Define a default height for the grid
+    this.DEFAULT_GRID_HEIGHT = 2000; // grid height
     this.gridHeight = this.DEFAULT_GRID_HEIGHT; // Current grid height
 
     // For managing z-index of overlapping images
@@ -293,7 +293,7 @@ class ImageGrid {
         <div class="context-menu-item" data-action="scale" style="display: none;">Scale</div>
         <div class="context-menu-item" data-action="addImage">Add Image</div>
         <label class="context-menu-item context-menu-item-devmode">
-          <span>Dev Mode</span>
+          <span>Rulers</span>
           <input type="checkbox" data-action="toggleDevMode" ${this.devMode ? 'checked' : ''}>
         </label>
         <div class="context-menu-item danger" data-action="delete" style="display: none;">Delete</div>
