@@ -24,6 +24,10 @@ class ImageGrid {
     this.dragThreshold = 5; // Minimum pixels to consider it a drag
     this.wasDragged = false; // Flag to prevent click after drag
     
+    this.fixedContentHeight = 0; // Tracks the cumulative height of fixed-to-top images
+    this.dynamicContentOffsetY = 0; // Offset for new images added below fixed content
+    this.imagesLoading = 0; // Counter for images still loading
+    
     // For managing z-index of overlapping images
     this.zIndexCounter = 10;
     this.BASE_IMAGE_DIMENSION = 400; // Define a base dimension for scale calculation
@@ -58,6 +62,7 @@ class ImageGrid {
     if (this.profileDropdown) {
       this.profileDropdown.classList.remove('show');
     }
+    this.imageGrid.addEventListener('allImagesLoaded', this.onAllImagesLoaded.bind(this));
   }
   
   // Load images from the server's JSON file
@@ -77,6 +82,7 @@ class ImageGrid {
         // Restore images
         if (data.images && data.images.length > 0) {
           data.images.forEach(imageData => {
+            this.imagesLoading++; // Increment counter for each image
             this.restoreImageFromServer(imageData);
           });
         }
@@ -113,6 +119,7 @@ class ImageGrid {
     gridItem.dataset.x = imageData.x; // Store initial x
     gridItem.dataset.y = imageData.y; // Store initial y
     gridItem.dataset.scale = imageData.scale || 1; // Store initial scale
+    gridItem.dataset.fixedToTop = imageData.fixedToTop || false; // Store fixedToTop status
     
     const img = document.createElement('img');
     img.src = `images/${imageData.filename}`; // Load from images folder
@@ -156,6 +163,19 @@ class ImageGrid {
 
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
+      
+      if (gridItem.dataset.fixedToTop === 'true') {
+        gridItem.style.zIndex = 100; // Ensure fixed images are on top
+        // Optionally, calculate fixedContentHeight here once dimensions are known
+        // this.fixedContentHeight += gridItem.offsetHeight; // This needs careful management for initial load
+      } else { // For dynamic images, update the offset
+        this.dynamicContentOffsetY += gridItem.offsetHeight + 20; // Add some padding
+      }
+      
+      this.imagesLoading--; // Decrement counter
+      if (this.imagesLoading === 0) {
+        this.imageGrid.dispatchEvent(new Event('allImagesLoaded'));
+      }
     };
     
     gridItem.addEventListener('click', (e) => {
@@ -188,6 +208,57 @@ class ImageGrid {
         this.hideRulers();
       }
     });
+  }
+  
+  // Calculate the total height occupied by fixed-to-top images
+  calculateFixedContentHeight() {
+    this.fixedContentHeight = 0; // Reset before recalculating
+    const fixedItems = Array.from(this.imageGrid.querySelectorAll('.grid-item[data-fixed-to-top="true"]'));
+    fixedItems.forEach(item => {
+      // Ensure image is loaded before getting offsetHeight
+      const img = item.querySelector('img');
+      if (img && img.complete) {
+        this.fixedContentHeight += item.offsetHeight;
+      } else if (img) {
+        img.onload = () => {
+          this.fixedContentHeight += item.offsetHeight;
+        };
+      }
+    });
+    // Optional: Call updateGridLayout or similar to ensure grid adjusts if needed
+    // this.updateGridLayout(); 
+  }
+  
+  onAllImagesLoaded() {
+    console.log('All images have loaded. Calculating fixed content height and dynamic offset.');
+    this.fixedContentHeight = 0;
+    let maxDynamicY = 0;
+
+    const allGridItems = Array.from(this.imageGrid.querySelectorAll('.grid-item'));
+
+    allGridItems.forEach(item => {
+      if (item.dataset.fixedToTop === 'true') {
+        this.fixedContentHeight += item.offsetHeight;
+      } else {
+        const itemTop = parseFloat(item.style.top);
+        const itemHeight = item.offsetHeight;
+        maxDynamicY = Math.max(maxDynamicY, itemTop + itemHeight);
+      }
+    });
+    
+    // Ensure dynamicContentOffsetY starts where fixed content ends, or after existing dynamic images
+    this.dynamicContentOffsetY = Math.max(this.fixedContentHeight, maxDynamicY);
+    
+    // Also update the initial position of dynamic images, they should be offset by fixedContentHeight
+    allGridItems.forEach(item => {
+      if (item.dataset.fixedToTop !== 'true') {
+        const currentX = parseFloat(item.style.left) || 0;
+        const currentY = parseFloat(item.style.top) || 0;
+        item.style.top = (currentY + this.fixedContentHeight) + 'px';
+        item.dataset.y = (currentY + this.fixedContentHeight); // Update dataset as well
+      }
+    });
+    this.updateGridLayout();
   }
   
   createContextMenu() {
@@ -477,11 +548,18 @@ class ImageGrid {
     gridItem.dataset.x = 0; // Default x for new image
     gridItem.dataset.y = 0; // Default y for new image
     gridItem.dataset.scale = 1; // Default scale for new image
+    gridItem.dataset.fixedToTop = false; // Default for new images
     
     const img = document.createElement('img');
     img.src = imageSrc;
     img.alt = 'Grid image';
     
+    // Set initial position for new (non-fixed) images
+    gridItem.style.position = 'absolute';
+    gridItem.style.left = 0 + 'px'; // New images start at x=0
+    gridItem.style.top = (this.fixedContentHeight + this.dynamicContentOffsetY) + 'px';
+    gridItem.style.margin = '0';
+
     gridItem.appendChild(img);
     
     // Add rulers for dev mode
@@ -516,6 +594,14 @@ class ImageGrid {
 
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
+      
+      if (gridItem.dataset.fixedToTop === 'true') {
+        gridItem.style.zIndex = 100; // Ensure fixed images are on top
+      } else { // For dynamic images, update the offset
+        // Update dynamicContentOffsetY after the new image is rendered
+        this.dynamicContentOffsetY = Math.max(this.dynamicContentOffsetY, parseFloat(gridItem.style.top) + gridItem.offsetHeight + 20); // Add some padding
+        this.updateGridLayout(); // Update grid layout after adding a new dynamic image
+      }
     };
 
     gridItem.addEventListener('click', (e) => {
@@ -583,6 +669,10 @@ class ImageGrid {
   }
   
   setupDragAndDrop(element) {
+    if (element.dataset.fixedToTop === 'true') {
+      element.style.cursor = 'default'; // Change cursor for non-draggable items
+      return; // Do not set up drag and drop for fixed images
+    }
     element.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();

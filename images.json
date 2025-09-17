@@ -10,7 +10,8 @@
         "scale": 2,
         "originalName": "title.png",
         "title": "title",
-        "description": "description"
+        "description": "description",
+        "fixedToTop": true
       },
       {
         "id": "description",
@@ -20,7 +21,8 @@
         "scale": 1.4,
         "originalName": "description.png",
         "title": "description",
-        "description": "description"
+        "description": "description",
+        "fixedToTop": true
       },
       {
         "id": "instructions",
@@ -30,7 +32,8 @@
         "scale": 1,
         "originalName": "instructions.png",
         "title": "instructions",
-        "description": "click and drag to pan, scroll to zoom in/out"
+        "description": "click and drag to pan, scroll to zoom in/out",
+        "fixedToTop": true
       },
       {
         "id": "piece_0",
