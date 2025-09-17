@@ -44,6 +44,16 @@
         "originalName": "wallpaper_1.png",
         "title": "wallpaper 1",
         "description": "(xx.xx.2025) one of the first pieces i liked, made for my desktop"
+      },
+      {
+        "id": "piece_1",
+        "filename": "wallpaper_5.png",
+        "x": 10,
+        "y": 750,
+        "scale": 1,
+        "originalName": "wallpaper_5.png",
+        "title": "wallpaper 5",
+        "description": "another"
       }
     ],
     "gridState": {
