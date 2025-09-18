@@ -11,35 +11,31 @@ class ImageGrid {
     this.isPanning = false;
     this.lastPanX = 0;
     this.lastPanY = 0;
-    this.draggedElement = null;
-    this.dragOffset = { x: 0, y: 0 };
     this.contextMenu = null;
     this.selectedItem = null;
     this.imageCounter = 0;
-    this.devMode = false; // Add devMode state
-    this.isDraggingImage = false; // Flag to differentiate click from drag
-    this.draggedDistance = 0; // Track distance dragged
+    this.rulers = false;
     this.initialDragX = 0;
     this.initialDragY = 0;
-    this.dragThreshold = 5; // Minimum pixels to consider it a drag
-    // Removed this.wasDragged as it's no longer needed for click prevention
+    this.dragThreshold = 5;
+    this.isDraggingImage = false;
+    this.draggedDistance = 0;
+    this.draggedElement = null;
+    this.dragOffset = { x: 0, y: 0 };
     
-    // Bound event handlers for consistent add/removeEventListener
     this.boundHandleDrag = this.handleDrag.bind(this);
     this.boundEndDrag = this.endDrag.bind(this);
     
-    this.fixedContentHeight = 0; // Tracks the cumulative height of fixed-to-top images
-    this.dynamicContentOffsetY = 0; // Offset for new images added below fixed content
-    this.imagesLoading = 0; // Counter for images still loading
+    this.fixedContentHeight = 0;
+    this.dynamicContentOffsetY = 0;
+    this.imagesLoading = 0;
     
-    this.DEFAULT_GRID_HEIGHT = 1500; // Define a default height for the grid
-    this.gridHeight = this.DEFAULT_GRID_HEIGHT; // Current grid height, will be overridden by images.json if present
+    this.DEFAULT_GRID_HEIGHT = 1500;
+    this.gridHeight = this.DEFAULT_GRID_HEIGHT; //overriden by images.json
 
-    // For managing z-index of overlapping images
     this.zIndexCounter = 10;
-    this.BASE_IMAGE_DIMENSION = 400; // Define a base dimension for scale calculation
+    this.BASE_IMAGE_DIMENSION = 400; // for scale calculation
     
-    // Global rulers for dev mode
     this.rulerX = document.createElement('div');
     this.rulerX.className = 'ruler-x';
     document.body.appendChild(this.rulerX);
@@ -51,7 +47,6 @@ class ImageGrid {
     this.profilePic = document.querySelector('.profile-pic');
     this.profileDropdown = document.querySelector('.profile-dropdown');
 
-    // Modal elements
     this.modalOverlay = document.getElementById('modalOverlay');
     this.modalTitle = document.getElementById('modalTitle');
     this.modalText = document.getElementById('modalText');
@@ -63,79 +58,71 @@ class ImageGrid {
   init() {
     this.setupEventListeners();
     this.createContextMenu();
-    this.loadImagesFromServer();
+    this.loadImages();
     this.updateTransform();
-    // Ensure profile dropdown is hidden on initialization
     if (this.profileDropdown) {
       this.profileDropdown.classList.remove('show');
     }
-    // No longer setting minHeight here, will be set after loading gridState
     this.imageGrid.addEventListener('allImagesLoaded', this.onAllImagesLoaded.bind(this));
   }
   
-  // Load images from the server's JSON file
-  async loadImagesFromServer() {
+  async loadImages() {
     try {
       const response = await fetch('images.json');
       if (response.ok) {
         const data = await response.json();
         
-        // Restore grid state
         if (data.gridState) {
           this.scale = data.gridState.scale || 1;
           this.panX = data.gridState.panX || 0;
           this.panY = data.gridState.panY || 0;
-          this.gridHeight = data.gridState.gridHeight || this.DEFAULT_GRID_HEIGHT; // Load gridHeight
-          this.imageGrid.style.minHeight = this.gridHeight + 'px'; // Apply loaded gridHeight
+          this.gridHeight = data.gridState.gridHeight || this.DEFAULT_GRID_HEIGHT;
+          this.imageGrid.style.minHeight = this.gridHeight + 'px';
         }
         
-        // Restore images
         if (data.images && data.images.length > 0) {
           data.images.forEach(imageData => {
-            this.imagesLoading++; // Increment counter for each image
-            this.restoreImageFromServer(imageData);
+            this.imagesLoading++;
+            this.restoreImages(imageData);
           });
         }
       } else {
         console.log('No images.json found, starting with empty grid');
       }
     } catch (error) {
-      console.error('Error loading images from server:', error);
+      console.error('Error loading images:', error);
     }
   }
   
-  updateDevModeUI() {
-    if (this.devMode) {
-      document.body.classList.add('dev-mode-enabled');
+  updateRulersUI() {
+    if (this.rulers) {
+      document.body.classList.add('rulers-enabled');
     } else {
-      document.body.classList.remove('dev-mode-enabled');
-      this.hideRulers(); // Hide rulers when dev mode is disabled
+      document.body.classList.remove('rulers-enabled');
+      this.hideRulers();
     }
-    // Update context menu item text
-    const devModeCheckbox = this.contextMenu.querySelector('[data-action="toggleDevMode"]');
-    if (devModeCheckbox) {
-      devModeCheckbox.checked = this.devMode;
+    const rulersCheckbox = this.contextMenu.querySelector('[data-action="toggleRulers"]');
+    if (rulersCheckbox) {
+      rulersCheckbox.checked = this.rulers;
     }
   }
   
-  // Restore a single image from server data
-  restoreImageFromServer(imageData) {
+  restoreImages(imageData) {
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
     gridItem.dataset.imageId = imageData.id;
     gridItem.dataset.originalName = imageData.originalName;
     gridItem.dataset.title = imageData.title || 'Untitled';
     gridItem.dataset.description = imageData.description || 'No description available.';
-    gridItem.dataset.x = imageData.x; // Store initial x
-    gridItem.dataset.y = imageData.y; // Store initial y
-    gridItem.dataset.scale = imageData.scale || 1; // Store initial scale
-    gridItem.dataset.fixedToTop = imageData.fixedToTop || false; // Store fixedToTop status
+    gridItem.dataset.x = imageData.x;
+    gridItem.dataset.y = imageData.y;
+    gridItem.dataset.scale = imageData.scale || 1;
+    gridItem.dataset.fixedToTop = imageData.fixedToTop || false;
     
     const img = document.createElement('img');
-    img.src = `images/${imageData.filename}`; // Load from images folder
+    img.src = `images/${imageData.filename}`;
     img.alt = 'Grid image';
     
-    // Set position and size
     gridItem.style.position = 'absolute';
     gridItem.style.left = imageData.x + 'px';
     gridItem.style.top = imageData.y + 'px';
@@ -144,7 +131,6 @@ class ImageGrid {
     this.imageGrid.appendChild(gridItem);
     this.setupDragAndDrop(gridItem);
     
-    // Add info overlay
     const infoOverlay = document.createElement('div');
     infoOverlay.className = 'grid-item-info-overlay';
     infoOverlay.innerHTML = `
@@ -153,7 +139,6 @@ class ImageGrid {
     `;
     gridItem.appendChild(infoOverlay);
 
-    // Adjust info overlay size and position after image loads
     img.onload = () => {
       const naturalWidth = img.naturalWidth;
       const naturalHeight = img.naturalHeight;
@@ -174,57 +159,51 @@ class ImageGrid {
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
       
-      // Removed z-index for fixed images as per user request
-      this.imagesLoading--; // Decrement counter
+      this.imagesLoading--;
       if (this.imagesLoading === 0) {
         this.imageGrid.dispatchEvent(new Event('allImagesLoaded'));
       }
     };
 
     gridItem.addEventListener('click', (e) => {
-      // Prevent click event from opening overlay if it was a drag
       if (this.draggedDistance > this.dragThreshold) {
         e.stopPropagation();
-        this.draggedDistance = 0; // Reset for next interaction
+        this.draggedDistance = 0;
         return;
       }
-      if (e.target.tagName !== 'A' && !this.isDraggingImage) { // Only toggle if not dragging and not clicking a link
+      if (e.target.tagName !== 'A' && !this.isDraggingImage) {
         infoOverlay.classList.toggle('show');
       }
     });
 
-    // Update counter to avoid ID conflicts
     const idNum = parseInt(imageData.id.replace('img_', ''));
     if (idNum >= this.imageCounter) {
       this.imageCounter = idNum + 1;
     }
     
-    // Add rulers for dev mode (similar to createGridItem)
     gridItem.addEventListener('mouseover', () => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.updateRulers(gridItem);
       }
     });
     
     gridItem.addEventListener('mousemove', (e) => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.updateRulers(gridItem);
       }
     });
     
     gridItem.addEventListener('mouseout', () => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.hideRulers();
       }
     });
   }
   
-  // Calculate the total height occupied by fixed-to-top images
   calculateFixedContentHeight() {
-    this.fixedContentHeight = 0; // Reset before recalculating
+    this.fixedContentHeight = 0;
     const fixedItems = Array.from(this.imageGrid.querySelectorAll('.grid-item[data-fixed-to-top="true"]'));
     fixedItems.forEach(item => {
-      // Ensure image is loaded before getting offsetHeight
       const img = item.querySelector('img');
       if (img && img.complete) {
         this.fixedContentHeight += item.offsetHeight;
@@ -234,8 +213,6 @@ class ImageGrid {
         };
       }
     });
-    // Optional: Call updateGridLayout or similar to ensure grid adjusts if needed
-    // this.updateGridLayout(); 
   }
   
   onAllImagesLoaded() {
@@ -251,24 +228,21 @@ class ImageGrid {
       } else {
         const itemTop = parseFloat(item.style.top) || 0;
         const itemHeight = item.offsetHeight;
-        // Calculate distanceFromBottom relative to the initial gridHeight
         const distanceFromBottom = this.gridHeight - (itemTop + itemHeight);
-        item.dataset.distanceFromBottom = distanceFromBottom; // Store for later use
+        item.dataset.distanceFromBottom = distanceFromBottom;
         maxDynamicY = Math.max(maxDynamicY, itemTop + itemHeight);
       }
     });
     
-    // dynamicContentOffsetY should be the top position for a newly added dynamic image
-    this.dynamicContentOffsetY = this.fixedContentHeight + 20; // 20px padding below fixed content
+    this.dynamicContentOffsetY = this.fixedContentHeight + 20;
     
-    // Position dynamic images based on their distanceFromBottom
     allGridItems.forEach(item => {
       if (item.dataset.fixedToTop !== 'true') {
         const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0;
         const newY = this.gridHeight - item.offsetHeight - currentDistanceFromBottom;
 
         item.style.top = Math.max(this.fixedContentHeight, newY) + 'px';
-        item.dataset.y = parseFloat(item.style.top); // Update dataset as well
+        item.dataset.y = parseFloat(item.style.top);
       }
     });
     this.updateGridLayout();
@@ -276,19 +250,17 @@ class ImageGrid {
   
   setGridHeight(newHeight) {
     const oldGridHeight = this.gridHeight;
-    this.gridHeight = Math.max(newHeight, this.fixedContentHeight + 100); // Ensure minimum height below fixed content
+    this.gridHeight = Math.max(newHeight, this.fixedContentHeight + 100);
     this.imageGrid.style.minHeight = this.gridHeight + 'px';
 
-    // Reposition dynamic images to maintain their distance from the bottom
     Array.from(this.imageGrid.querySelectorAll('.grid-item')).forEach(item => {
       if (item.dataset.fixedToTop !== 'true') {
-        const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0; // Use stored distance
+        const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0;
         
-        // Calculate new Y based on new gridHeight and stored distanceFromBottom
         const newY = this.gridHeight - item.offsetHeight - currentDistanceFromBottom;
 
         item.style.top = Math.max(this.fixedContentHeight, newY) + 'px';
-        item.dataset.y = parseFloat(item.style.top); // Update dataset as well
+        item.dataset.y = parseFloat(item.style.top);
       }
     });
     this.updateGridLayout();
@@ -302,24 +274,21 @@ class ImageGrid {
         <div class="context-menu-item" data-action="scale" style="display: none;">scale</div>
         <div class="context-menu-item" data-action="addImage">add image</div>
         <div class="context-menu-item" data-action="setGridHeight">grid height</div>
-        <label class="context-menu-item context-menu-item-devmode">
+        <label class="context-menu-item context-menu-item-rulers">
           <span>rulers</span>
-          <input type="checkbox" data-action="toggleDevMode" ${this.devMode ? 'checked' : ''}>
+          <input type="checkbox" data-action="toggleRulers" ${this.rulers ? 'checked' : ''}>
         </label>
         <div class="context-menu-item danger" data-action="delete" style="display: none;">delete</div>
       </div>
     `;
     document.body.appendChild(this.contextMenu);
     
-    // Add click handlers for menu items
     this.contextMenu.addEventListener('click', (e) => {
       const target = e.target;
       const action = target.getAttribute('data-action');
       if (action) {
-        // If action is not 'toggleDevMode', it needs a selected item
-        if (action === 'toggleDevMode') {
+        if (action === 'toggleRulers') {
           this.handleContextMenuAction(action, null);
-          // Prevent menu from closing if only toggling checkbox
           e.stopPropagation(); 
         } else if (action === 'addImage') {
           this.handleContextMenuAction(action, null);
@@ -340,8 +309,8 @@ class ImageGrid {
       case 'delete':
         this.deleteImage(item);
         break;
-      case 'toggleDevMode':
-        this.toggleDevMode();
+      case 'toggleRulers':
+        this.toggleRulers();
         break;
       case 'addImage':
         this.imageInput.click();
@@ -352,9 +321,9 @@ class ImageGrid {
     }
   }
   
-  toggleDevMode() {
-    this.devMode = !this.devMode;
-    this.updateDevModeUI();
+  toggleRulers() {
+    this.rulers = !this.rulers;
+    this.updateRulersUI();
   }
   
   promptForGridHeight() {
@@ -363,7 +332,7 @@ class ImageGrid {
 
     if (newHeightStr !== null) {
       const newHeight = parseInt(newHeightStr);
-      if (!isNaN(newHeight) && newHeight >= this.fixedContentHeight + 100) { // Ensure minimum height
+      if (!isNaN(newHeight) && newHeight >= this.fixedContentHeight + 100) {
         this.setGridHeight(newHeight);
       } else {
         alert(`Please enter a valid number for grid height (minimum: ${this.fixedContentHeight + 100}px).`);
@@ -375,12 +344,11 @@ class ImageGrid {
     const currentScale = parseFloat(item.dataset.scale) || 1;
     const newScaleStr = prompt(`Enter new scale (current: ${currentScale}):`, currentScale);
     
-    if (newScaleStr !== null) { // User didn't cancel
+    if (newScaleStr !== null) {
       const newScale = parseFloat(newScaleStr);
-      if (!isNaN(newScale) && newScale > 0.1 && newScale < 10) { // Basic validation
-        item.dataset.scale = newScale; // Update dataset
+      if (!isNaN(newScale) && newScale > 0.1 && newScale < 10) {
+        item.dataset.scale = newScale;
         
-        // Find the img element within the gridItem to get natural dimensions
         const imgElement = item.querySelector('img');
         if (imgElement) {
           const naturalWidth = imgElement.naturalWidth;
@@ -401,7 +369,7 @@ class ImageGrid {
           item.style.width = newWidth + 'px';
           item.style.height = newHeight + 'px';
         }
-        this.updateGridLayout(); // Re-render grid if needed
+        this.updateGridLayout();
       } else {
         alert('Please enter a valid number for scale (e.g., 0.5 to 10).');
       }
@@ -422,10 +390,10 @@ class ImageGrid {
     const scaleItem = this.contextMenu.querySelector('[data-action="scale"]');
     const deleteItem = this.contextMenu.querySelector('[data-action="delete"]');
 
-    if (item) { // An image item was right-clicked
+    if (item) {
       scaleItem.style.display = 'block';
       deleteItem.style.display = 'block';
-    } else { // Grid or header was right-clicked
+    } else {
       scaleItem.style.display = 'none';
       deleteItem.style.display = 'none';
     }
@@ -442,7 +410,7 @@ class ImageGrid {
   
   openModal(title) {
     this.modalTitle.textContent = title;
-    let content = "placehold"; // Default placeholder
+    let content = "theres nothing here";
 
     if (title === "Socials") {
       content = `
@@ -465,7 +433,7 @@ class ImageGrid {
       `;
     }
 
-    this.modalText.innerHTML = content; // Use innerHTM
+    this.modalText.innerHTML = content;
     this.modalOverlay.classList.add('show');
     document.body.classList.add('modal-open');
   }
@@ -476,12 +444,10 @@ class ImageGrid {
   }
 
   setupEventListeners() {
-    // File input
     this.imageInput.addEventListener('change', (e) => {
       this.handleFileSelect(e);
     });
     
-    // Pan functionality
     this.gridContainer.addEventListener('mousedown', (e) => {
       if (e.target === this.gridContainer || e.target === this.imageGrid) {
         this.startPan(e);
@@ -498,29 +464,24 @@ class ImageGrid {
       this.endPan();
     });
     
-    // Zoom functionality
     this.gridContainer.addEventListener('wheel', (e) => {
       e.preventDefault();
       this.zoom(e);
     });
     
-    // Hide context menu when clicking elsewhere
     document.addEventListener('click', (e) => {
       if (!this.contextMenu.contains(e.target)) {
         this.hideContextMenu();
       }
     });
     
-    // Prevent context menu on grid container
     this.gridContainer.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      // Only show context menu if not an image
       if (!e.target.closest('.grid-item')) {
-        this.showContextMenu(e, null); // Pass null as no item is selected for grid context menu
+        this.showContextMenu(e, null);
       }
     });
     
-    // Also prevent context menu on the header area
     const header = document.querySelector('.container');
     if (header) {
       header.addEventListener('contextmenu', (e) => {
@@ -528,9 +489,8 @@ class ImageGrid {
       });
     }
     
-    // Profile picture dropdown
     this.profilePic.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent document click from closing it immediately
+      e.stopPropagation();
       this.profileDropdown.classList.toggle('show');
     });
 
@@ -540,17 +500,15 @@ class ImageGrid {
       }
     });
     
-    // Profile dropdown menu item clicks
     const dropdownItems = this.profileDropdown.querySelectorAll('.profile-dropdown-item');
     dropdownItems.forEach(item => {
       item.addEventListener('click', (e) => {
         const action = e.target.textContent;
         this.openModal(action);
-        this.profileDropdown.classList.remove('show'); // Hide dropdown after selection
+        this.profileDropdown.classList.remove('show');
       });
     });
 
-    // Close modal event listeners
     this.closeModalBtn.addEventListener('click', () => this.closeModal());
     this.modalOverlay.addEventListener('click', (e) => {
       if (e.target === this.modalOverlay) {
@@ -572,7 +530,6 @@ class ImageGrid {
         this.addImage(file);
       }
     });
-    // Reset input
     e.target.value = '';
   }
   
@@ -590,39 +547,33 @@ class ImageGrid {
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
     
-    // Generate unique ID and filename for this image
     const imageId = `img_${this.imageCounter++}`;
     const filename = `${imageId}_${file.name}`;
     gridItem.dataset.imageId = imageId;
     gridItem.dataset.filename = filename;
-    gridItem.dataset.originalName = file.name || 'image';
-    gridItem.dataset.title = file.name || 'Untitled'; // Default title
-    gridItem.dataset.description = 'No description available.'; // Default description
-    gridItem.dataset.x = 0; // Default x for new image
-    gridItem.dataset.y = 0; // Default y for new image
-    gridItem.dataset.scale = 1; // Default scale for new image
-    gridItem.dataset.fixedToTop = false; // Default for new images
+    gridItem.dataset.originalName = file.name || 'image.png';
+    gridItem.dataset.title = file.name || 'title';
+    gridItem.dataset.description = 'description';
+    gridItem.dataset.x = 0;
+    gridItem.dataset.y = 0;
+    gridItem.dataset.scale = 1;
+    gridItem.dataset.fixedToTop = false;
     
     const img = document.createElement('img');
     img.src = imageSrc;
     img.alt = 'Grid image';
     
-    // Set initial position for new (non-fixed) images at the top of the dynamic content area
     const initialX = 0;
-    const initialY = this.dynamicContentOffsetY; // Place at the current top of dynamic content
+    const initialY = this.dynamicContentOffsetY;
     gridItem.style.position = 'absolute';
     gridItem.style.left = initialX + 'px';
     gridItem.style.top = initialY + 'px';
     gridItem.style.margin = '0';
-    gridItem.dataset.x = initialX; // Store initial x in dataset
-    gridItem.dataset.y = initialY; // Store initial y in dataset
+    gridItem.dataset.x = initialX;
+    gridItem.dataset.y = initialY;
     
     gridItem.appendChild(img);
     
-    // Add rulers for dev mode
-    // Removed ruler creation here
-    
-    // Add info overlay
     const infoOverlay = document.createElement('div');
     infoOverlay.className = 'grid-item-info-overlay';
     infoOverlay.innerHTML = `
@@ -631,7 +582,6 @@ class ImageGrid {
     `;
     gridItem.appendChild(infoOverlay);
 
-    // Adjust info overlay size and position after image loads
     img.onload = () => {
       const naturalWidth = img.naturalWidth;
       const naturalHeight = img.naturalHeight;
@@ -652,47 +602,42 @@ class ImageGrid {
       gridItem.style.width = newWidth + 'px';
       gridItem.style.height = newHeight + 'px';
       
-      // Removed z-index for fixed images as per user request
-      // Update dynamicContentOffsetY after the new image is rendered
       if (gridItem.dataset.fixedToTop !== 'true') {
-        const newImageHeight = gridItem.offsetHeight; // Get rendered height of the new image
+        const newImageHeight = gridItem.offsetHeight;
         const padding = 20;
 
-        // Store distanceFromBottom for the newly added image
         gridItem.dataset.distanceFromBottom = this.gridHeight - (initialY + newImageHeight);
         
-        // No longer pushing down other images, so dynamicContentOffsetY is just the fixed top position
         this.dynamicContentOffsetY = this.fixedContentHeight + padding;
-        this.updateGridLayout(); // Update grid layout after adding a new dynamic image
+        this.updateGridLayout();
       }
     };
 
     gridItem.addEventListener('click', (e) => {
-      // Prevent click event from opening overlay if it was a drag
       if (this.draggedDistance > this.dragThreshold) {
         e.stopPropagation();
-        this.draggedDistance = 0; // Reset for next interaction
+        this.draggedDistance = 0;
         return;
       }
-      if (e.target.tagName !== 'A' && !this.isDraggingImage) { // Only toggle if not dragging and not clicking a link
+      if (e.target.tagName !== 'A' && !this.isDraggingImage) {
         infoOverlay.classList.toggle('show');
       }
     });
 
     gridItem.addEventListener('mouseover', () => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.updateRulers(gridItem);
       }
     });
     
     gridItem.addEventListener('mousemove', (e) => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.updateRulers(gridItem);
       }
     });
     
     gridItem.addEventListener('mouseout', () => {
-      if (this.devMode) {
+      if (this.rulers) {
         this.hideRulers();
       }
     });
@@ -709,48 +654,41 @@ class ImageGrid {
     const rect = gridItem.getBoundingClientRect();
     const gridRect = this.imageGrid.getBoundingClientRect();
     
-    // Calculate position relative to the grid (taking pan and scale into account)
     const gridX = Math.round((rect.left - gridRect.left) / this.scale);
     const gridY = Math.round((rect.top - gridRect.top) / this.scale);
     const gridWidth = Math.round(rect.width / this.scale);
     const gridHeight = Math.round(rect.height / this.scale);
     
-    // Update X ruler (visual position still viewport-relative)
     this.rulerX.style.left = rect.left + 'px';
     this.rulerX.style.top = rect.top + 'px';
-    this.rulerX.style.width = `calc(100vw - ${rect.left}px)`; // Span to the right of the viewport
+    this.rulerX.style.width = `calc(100vw - ${rect.left}px)`;
     this.rulerX.setAttribute('data-value', `X: ${gridX}px, Width: ${gridWidth}px`);
     this.rulerX.style.display = 'block';
     
-    // Update Y ruler (visual position still viewport-relative)
     this.rulerY.style.left = rect.left + 'px';
     this.rulerY.style.top = rect.top + 'px';
-    this.rulerY.style.height = `calc(100vh - ${rect.top}px)`; // Span to the bottom of the viewport
+    this.rulerY.style.height = `calc(100vh - ${rect.top}px)`;
     this.rulerY.setAttribute('data-value', `Y: ${gridY}px, Height: ${gridHeight}px`);
     this.rulerY.style.display = 'block';
   }
   
   updateGridLayout() {
-    // Force grid to recalculate layout
     this.imageGrid.style.display = 'none';
-    this.imageGrid.offsetHeight; // Trigger reflow
+    this.imageGrid.offsetHeight;
     this.imageGrid.style.display = 'grid';
   }
   
   setupDragAndDrop(element) {
-    // Removed condition to prevent dragging fixedToTop images as per user request
-    element.style.cursor = 'grab'; // Restore grab cursor for all draggable items
+    element.style.cursor = 'grab';
     element.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       
-      // Only start drag if the actual image is clicked
       if (e.target.tagName === 'IMG') {
         this.startDrag(e, element);
       }
     });
     
-    // Add right-click context menu (still on the grid-item for the whole area)
     element.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -762,26 +700,20 @@ class ImageGrid {
     this.draggedElement = element;
     element.classList.add('dragging');
     
-    // Immediately update z-index when dragging starts
     this.draggedElement.style.zIndex = this.zIndexCounter++;
-    this.isDraggingImage = true; // Set flag when dragging starts
+    this.isDraggingImage = true;
     this.initialDragX = e.clientX;
     this.initialDragY = e.clientY;
-    this.draggedDistance = 0; // Reset distance for new drag
-    // Removed this.wasDragged = false; as it's no longer needed
+    this.draggedDistance = 0;
     
     const gridContainerRect = this.gridContainer.getBoundingClientRect();
     
-    // Get the untransformed position from dataset
     const currentGridItemX = parseFloat(element.dataset.x) || 0;
     const currentGridItemY = parseFloat(element.dataset.y) || 0;
  
-    // Calculate mouse position relative to the gridContainer, then reverse pan and scale
     const mouseXInGridCoords = (e.clientX - gridContainerRect.left - this.panX) / this.scale;
     const mouseYInGridCoords = (e.clientY - gridContainerRect.top - this.panY) / this.scale;
  
-    // dragOffset.x will be the distance from the mouse click to the top-left of the element,
-    // all in the imageGrid's untransformed coordinate system.
     this.dragOffset.x = mouseXInGridCoords - currentGridItemX;
     this.dragOffset.y = mouseYInGridCoords - currentGridItemY;
     
@@ -796,15 +728,12 @@ class ImageGrid {
     
     const gridContainerRect = this.gridContainer.getBoundingClientRect();
     
-    // mouse position relative to the imageGrid's untransformed origin
     const mouseXInGridCoords = (e.clientX - gridContainerRect.left - this.panX) / this.scale;
     const mouseYInGridCoords = (e.clientY - gridContainerRect.top - this.panY) / this.scale;
  
-    // New position for gridItem.style.left/top
     const newLeft = mouseXInGridCoords - this.dragOffset.x;
     const newTop = mouseYInGridCoords - this.dragOffset.y;
     
-    // Update dragged distance
     this.draggedDistance += Math.sqrt(e.movementX**2 + e.movementY**2);
 
     this.draggedElement.style.position = 'absolute';
@@ -812,7 +741,6 @@ class ImageGrid {
     this.draggedElement.style.top = newTop + 'px';
     this.draggedElement.style.margin = '0';
     
-    // Update dataset with new untransformed position
     this.draggedElement.dataset.x = newLeft;
     this.draggedElement.dataset.y = newTop;
   }
@@ -821,20 +749,16 @@ class ImageGrid {
     if (this.draggedElement) {
       this.draggedElement.classList.remove('dragging');
       
-      // Update z-index so the most recently dragged item is on top
       this.draggedElement.style.zIndex = this.zIndexCounter++;
       
       this.draggedElement = null;
-      this.isDraggingImage = false; // Reset flag when dragging ends
+      this.isDraggingImage = false;
       
       if (this.draggedElement.dataset.fixedToTop !== 'true') {
-        // Update distanceFromBottom for dynamic images after dragging
         const newY = parseFloat(this.draggedElement.style.top) || 0;
         const newHeight = this.draggedElement.offsetHeight;
         this.draggedElement.dataset.distanceFromBottom = this.gridHeight - (newY + newHeight);
       }
-      
-      // Removed this.wasDragged logic as it's no longer needed for click prevention
     }
     
     document.removeEventListener('mousemove', this.boundHandleDrag);
@@ -854,7 +778,6 @@ class ImageGrid {
     const deltaX = e.clientX - this.lastPanX;
     const deltaY = e.clientY - this.lastPanY;
     
-    // No pan limits - free movement
     this.panX += deltaX;
     this.panY += deltaY;
     
@@ -877,11 +800,9 @@ class ImageGrid {
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     const newScale = Math.max(0.25, Math.min(5, this.scale * zoomFactor));
     
-    // Calculate zoom point relative to current pan
     const zoomPointX = (mouseX - this.panX) / this.scale;
     const zoomPointY = (mouseY - this.panY) / this.scale;
     
-    // Adjust pan to zoom towards mouse position
     this.panX = mouseX - zoomPointX * newScale;
     this.panY = mouseY - zoomPointY * newScale;
     
@@ -894,7 +815,6 @@ class ImageGrid {
   }
 }
 
-// Initialize the image grid when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-  window.imageGrid = new ImageGrid(); // Assign to window for console access
+  window.imageGrid = new ImageGrid();
 });

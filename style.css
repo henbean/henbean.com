@@ -4,7 +4,7 @@ body {
   margin: 0;
   background: #000000;
   height: 100vh;
-  overflow: hidden; /* Prevent body scroll */
+  overflow: hidden;
 }
 
 .container {
@@ -64,19 +64,18 @@ body {
   object-fit: cover;
 }
 
-/* Profile Dropdown */
 .profile-dropdown {
   position: absolute;
-  top: 100%; /* Position below the profile picture */
+  top: 100%;
   right: 0;
   background: #222;
   border: 2px solid #333;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   z-index: 10;
   min-width: 150px;
-  display: none; /* Hidden by default */
+  display: none;
   padding: 0;
-  margin-top: 10px; /* Space between profile pic and dropdown */
+  margin-top: 10px;
 }
 
 .profile-dropdown.show {
@@ -108,7 +107,6 @@ body {
   color: #fff;
 }
 
-/* Modal Window Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -119,7 +117,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 20; /* Higher than other elements */
+  z-index: 20;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.1s ease-in-out, visibility 0.1s ease-in-out;
@@ -135,7 +133,7 @@ body {
   border: 2px solid #333;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
   width: 520px;
-  max-height: 80vh; /* Max height relative to viewport */
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -191,7 +189,7 @@ body {
 }
 
 .modal-body a {
-  color: #8c8c8c; /* Lighter color for better readability */
+  color: #8c8c8c;
   text-decoration: none;
   transition: color 0.2s ease-in-out;
 }
@@ -201,13 +199,11 @@ body {
   text-decoration: underline;
 }
 
-/* Blur effect for body when modal is active */
 body.modal-open > *:not(.modal-overlay) {
   filter: blur(1px);
   transition: filter 0.1s ease-in-out;
 }
 
-/* Grid container styles */
 .grid-container {
   position: fixed;
   top: 120px;
@@ -229,9 +225,6 @@ body.modal-open > *:not(.modal-overlay) {
   transform-origin: top left;
   transition: transform 0.05s ease-out;
   display: grid;
-  /* grid-template-columns: repeat(10, 61px);
-  grid-gap: 0px;
-  padding: 0px; */
   width: calc(20 * 50px + 1px);
   height: calc(48 * 50px + 1px);
   background-image: 
@@ -263,10 +256,9 @@ body.modal-open > *:not(.modal-overlay) {
   height: auto;
   object-fit: contain;
   border-radius: 4px;
-  cursor: grab; /* Add grab cursor to image */
+  cursor: grab;
 }
 
-/* Image Info Overlay */
 .grid-item-info-overlay {
   position: absolute;
   top: 0;
@@ -305,13 +297,11 @@ body.modal-open > *:not(.modal-overlay) {
   color: #ccc;
 }
 
-/* Shadow only on the image when dragging */
 .grid-item.dragging img {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  cursor: grabbing; /* Show grabbing cursor when dragging */
+  cursor: grabbing;
 }
 
-/* Context Menu Styles */
 .context-menu {
   position: fixed;
   background: #222;
@@ -426,8 +416,8 @@ body.modal-open > *:not(.modal-overlay) {
 .ruler-y::after {
   content: attr(data-value);
   position: absolute;
-  top: 140px; /* Adjusted to move down */
-  left: -16px; /* Adjusted to move right */
+  top: 140px;
+  left: -16px;
   color: red;
   font-size: 10px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
