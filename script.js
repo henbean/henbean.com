@@ -270,14 +270,10 @@ class ImageGrid {
     // Reposition dynamic images to maintain their distance from the bottom
     Array.from(this.imageGrid.querySelectorAll('.grid-item')).forEach(item => {
       if (item.dataset.fixedToTop !== 'true') {
-        // Recalculate distanceFromBottom based on current visual position before applying new height
-        const currentY = parseFloat(item.style.top) || 0;
-        const itemHeight = item.offsetHeight;
-        const currentDistanceFromBottom = this.gridHeight - (currentY + itemHeight);
-        item.dataset.distanceFromBottom = currentDistanceFromBottom; // Store the *recalculated* distance
+        const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0; // Use stored distance
         
-        // Calculate new Y based on new gridHeight and the *updated* distanceFromBottom
-        const newY = this.gridHeight - item.offsetHeight - parseFloat(item.dataset.distanceFromBottom);
+        // Calculate new Y based on new gridHeight and stored distanceFromBottom
+        const newY = this.gridHeight - item.offsetHeight - currentDistanceFromBottom;
 
         item.style.top = Math.max(this.fixedContentHeight, newY) + 'px';
         item.dataset.y = parseFloat(item.style.top); // Update dataset as well
