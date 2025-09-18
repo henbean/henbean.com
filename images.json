@@ -58,7 +58,8 @@
     ],
     "gridState": {
       "scale": 1,
-      "panX": 0,
-      "panY": 0
+      "panX": -100,
+      "panY": 0,
+      "gridHeight": 1000
     }
   }

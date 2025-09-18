@@ -33,7 +33,7 @@ class ImageGrid {
     this.imagesLoading = 0; // Counter for images still loading
     
     this.DEFAULT_GRID_HEIGHT = 1500; // Define a default height for the grid
-    this.gridHeight = this.DEFAULT_GRID_HEIGHT; // Current grid height
+    this.gridHeight = this.DEFAULT_GRID_HEIGHT; // Current grid height, will be overridden by images.json if present
 
     // For managing z-index of overlapping images
     this.zIndexCounter = 10;
@@ -69,7 +69,7 @@ class ImageGrid {
     if (this.profileDropdown) {
       this.profileDropdown.classList.remove('show');
     }
-    this.imageGrid.style.minHeight = this.gridHeight + 'px'; // Set initial grid height
+    // No longer setting minHeight here, will be set after loading gridState
     this.imageGrid.addEventListener('allImagesLoaded', this.onAllImagesLoaded.bind(this));
   }
   
@@ -85,6 +85,8 @@ class ImageGrid {
           this.scale = data.gridState.scale || 1;
           this.panX = data.gridState.panX || 0;
           this.panY = data.gridState.panY || 0;
+          this.gridHeight = data.gridState.gridHeight || this.DEFAULT_GRID_HEIGHT; // Load gridHeight
+          this.imageGrid.style.minHeight = this.gridHeight + 'px'; // Apply loaded gridHeight
         }
         
         // Restore images
@@ -297,13 +299,14 @@ class ImageGrid {
     this.contextMenu.className = 'context-menu';
     this.contextMenu.innerHTML = `
       <div class="context-menu-items">
-        <div class="context-menu-item" data-action="scale" style="display: none;">Scale</div>
-        <div class="context-menu-item" data-action="addImage">Add Image</div>
+        <div class="context-menu-item" data-action="scale" style="display: none;">scale</div>
+        <div class="context-menu-item" data-action="addImage">add image</div>
+        <div class="context-menu-item" data-action="setGridHeight">grid height</div>
         <label class="context-menu-item context-menu-item-devmode">
-          <span>Dev Mode</span>
+          <span>rulers</span>
           <input type="checkbox" data-action="toggleDevMode" ${this.devMode ? 'checked' : ''}>
         </label>
-        <div class="context-menu-item danger" data-action="delete" style="display: none;">Delete</div>
+        <div class="context-menu-item danger" data-action="delete" style="display: none;">delete</div>
       </div>
     `;
     document.body.appendChild(this.contextMenu);
@@ -341,12 +344,29 @@ class ImageGrid {
       case 'addImage':
         this.imageInput.click();
         break;
+      case 'setGridHeight':
+        this.promptForGridHeight();
+        break;
     }
   }
   
   toggleDevMode() {
     this.devMode = !this.devMode;
     this.updateDevModeUI();
+  }
+  
+  promptForGridHeight() {
+    const currentHeight = this.gridHeight;
+    const newHeightStr = prompt(`Enter new grid height (current: ${currentHeight}px):`, currentHeight);
+
+    if (newHeightStr !== null) {
+      const newHeight = parseInt(newHeightStr);
+      if (!isNaN(newHeight) && newHeight >= this.fixedContentHeight + 100) { // Ensure minimum height
+        this.setGridHeight(newHeight);
+      } else {
+        alert(`Please enter a valid number for grid height (minimum: ${this.fixedContentHeight + 100}px).`);
+      }
+    }
   }
   
   scaleImage(item) {
