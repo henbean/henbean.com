@@ -239,15 +239,15 @@ class ImageGrid {
       } else {
         const itemTop = parseFloat(item.style.top) || 0;
         const itemHeight = item.offsetHeight;
-        const distanceFromBottom = this.gridHeight - (itemTop + itemHeight); // Calculate distance from bottom
+        // Calculate distanceFromBottom relative to the initial gridHeight
+        const distanceFromBottom = this.gridHeight - (itemTop + itemHeight);
         item.dataset.distanceFromBottom = distanceFromBottom; // Store for later use
         maxDynamicY = Math.max(maxDynamicY, itemTop + itemHeight);
       }
     });
     
-    // dynamicContentOffsetY should be the max of where fixed content ends or the lowest dynamic item.
-    // We add a padding (e.g., 20px) to ensure there's space at the top for new dynamic items.
-    this.dynamicContentOffsetY = this.fixedContentHeight + 20; // Initial placement for new dynamic images, just below fixed content
+    // dynamicContentOffsetY should be the top position for a newly added dynamic image
+    this.dynamicContentOffsetY = this.fixedContentHeight + 20; // 20px padding below fixed content
     
     // Position dynamic images based on their distanceFromBottom
     allGridItems.forEach(item => {
@@ -255,7 +255,7 @@ class ImageGrid {
         const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0;
         const newY = this.gridHeight - item.offsetHeight - currentDistanceFromBottom;
 
-        item.style.top = Math.max(this.fixedContentHeight, newY) + 'px'; // Ensure it doesn't go above fixed content
+        item.style.top = Math.max(this.fixedContentHeight, newY) + 'px';
         item.dataset.y = parseFloat(item.style.top); // Update dataset as well
       }
     });
@@ -267,19 +267,20 @@ class ImageGrid {
     this.gridHeight = Math.max(newHeight, this.fixedContentHeight + 100); // Ensure minimum height below fixed content
     this.imageGrid.style.minHeight = this.gridHeight + 'px';
 
-    const heightDifference = this.gridHeight - oldGridHeight;
-
     // Reposition dynamic images to maintain their distance from the bottom
     Array.from(this.imageGrid.querySelectorAll('.grid-item')).forEach(item => {
       if (item.dataset.fixedToTop !== 'true') {
-        const currentY = parseFloat(item.dataset.y) || 0;
-        const currentDistanceFromBottom = parseFloat(item.dataset.distanceFromBottom) || 0; // Use stored distance
+        // Recalculate distanceFromBottom based on current visual position before applying new height
+        const currentY = parseFloat(item.style.top) || 0;
+        const itemHeight = item.offsetHeight;
+        const currentDistanceFromBottom = this.gridHeight - (currentY + itemHeight);
+        item.dataset.distanceFromBottom = currentDistanceFromBottom; // Store the *recalculated* distance
         
-        // Calculate new Y based on new gridHeight and stored distanceFromBottom
-        const newY = this.gridHeight - item.offsetHeight - currentDistanceFromBottom;
+        // Calculate new Y based on new gridHeight and the *updated* distanceFromBottom
+        const newY = this.gridHeight - item.offsetHeight - parseFloat(item.dataset.distanceFromBottom);
 
-        item.style.top = Math.max(this.fixedContentHeight, newY) + 'px'; // Ensure it doesn't go above fixed content
-        item.dataset.y = parseFloat(item.style.top); // Update dataset
+        item.style.top = Math.max(this.fixedContentHeight, newY) + 'px';
+        item.dataset.y = parseFloat(item.style.top); // Update dataset as well
       }
     });
     this.updateGridLayout();
@@ -624,28 +625,16 @@ class ImageGrid {
       gridItem.style.height = newHeight + 'px';
       
       // Removed z-index for fixed images as per user request
-      // For dynamic images, update the offset (only for newly added images)
+      // Update dynamicContentOffsetY after the new image is rendered
       if (gridItem.dataset.fixedToTop !== 'true') {
         const newImageHeight = gridItem.offsetHeight; // Get rendered height of the new image
         const padding = 20;
 
         // Store distanceFromBottom for the newly added image
-        gridItem.dataset.distanceFromBottom = this.gridHeight - (initialY + newImageHeight); // initialY is its top
-
-        // Push down all other dynamic images
-        Array.from(this.imageGrid.querySelectorAll('.grid-item')).forEach(item => {
-          if (item !== gridItem && item.dataset.fixedToTop !== 'true') {
-            const currentY = parseFloat(item.dataset.y) || 0;
-            const newY = currentY + newImageHeight + padding;
-            item.style.top = newY + 'px';
-            item.dataset.y = newY; // Update dataset
-            // CRITICAL FIX: Update distanceFromBottom for pushed-down images
-            item.dataset.distanceFromBottom = this.gridHeight - (newY + item.offsetHeight);
-          }
-        });
+        gridItem.dataset.distanceFromBottom = this.gridHeight - (initialY + newImageHeight);
         
-        // Update dynamicContentOffsetY for the next new image
-        this.dynamicContentOffsetY = initialY; // The next new image will appear at this 'top' spot
+        // No longer pushing down other images, so dynamicContentOffsetY is just the fixed top position
+        this.dynamicContentOffsetY = this.fixedContentHeight + padding;
         this.updateGridLayout(); // Update grid layout after adding a new dynamic image
       }
     };
