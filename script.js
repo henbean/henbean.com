@@ -24,6 +24,10 @@ class ImageGrid {
     this.dragThreshold = 5; // Minimum pixels to consider it a drag
     this.wasDragged = false; // Flag to prevent click after drag
     
+    // Bound event handlers for consistent add/removeEventListener
+    this.boundHandleDrag = this.handleDrag.bind(this);
+    this.boundEndDrag = this.endDrag.bind(this);
+    
     this.fixedContentHeight = 0; // Tracks the cumulative height of fixed-to-top images
     this.dynamicContentOffsetY = 0; // Offset for new images added below fixed content
     this.imagesLoading = 0; // Counter for images still loading
@@ -730,6 +734,7 @@ class ImageGrid {
     this.initialDragX = e.clientX;
     this.initialDragY = e.clientY;
     this.draggedDistance = 0; // Reset distance for new drag
+    this.wasDragged = false; // Reset wasDragged flag at the start of a new interaction
     
     const gridContainerRect = this.gridContainer.getBoundingClientRect();
     
@@ -746,8 +751,8 @@ class ImageGrid {
     this.dragOffset.x = mouseXInGridCoords - currentGridItemX;
     this.dragOffset.y = mouseYInGridCoords - currentGridItemY;
     
-    document.addEventListener('mousemove', this.handleDrag.bind(this));
-    document.addEventListener('mouseup', this.endDrag.bind(this));
+    document.addEventListener('mousemove', this.boundHandleDrag);
+    document.addEventListener('mouseup', this.boundEndDrag);
   }
   
   handleDrag(e) {
@@ -796,13 +801,14 @@ class ImageGrid {
       }
       
       if (this.draggedDistance > this.dragThreshold) {
-        this.wasDragged = true;
-        setTimeout(() => { this.wasDragged = false; }, 50);
-      }
+        this.wasDragged = true; // Set wasDragged to true if it was a drag
+      } 
+      // No longer using setTimeout to clear wasDragged, it's reset on next startDrag
+
     }
     
-    document.removeEventListener('mousemove', this.handleDrag.bind(this));
-    document.removeEventListener('mouseup', this.endDrag.bind(this));
+    document.removeEventListener('mousemove', this.boundHandleDrag);
+    document.removeEventListener('mouseup', this.boundEndDrag);
   }
   
   startPan(e) {
