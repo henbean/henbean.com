@@ -38,8 +38,8 @@
       {
         "id": "piece_0",
         "filename": "wallpaper_1.png",
-        "x": 10,
-        "y": 450,
+        "x": 0,
+        "y": 0,
         "scale": 1,
         "originalName": "wallpaper_1.png",
         "title": "wallpaper 1",
@@ -48,8 +48,8 @@
       {
         "id": "piece_1",
         "filename": "wallpaper_5.png",
-        "x": 10,
-        "y": 850,
+        "x": 0,
+        "y": 0,
         "scale": 1,
         "originalName": "wallpaper_5.png",
         "title": "wallpaper 5",
