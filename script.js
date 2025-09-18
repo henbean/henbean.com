@@ -22,7 +22,7 @@ class ImageGrid {
     this.initialDragX = 0;
     this.initialDragY = 0;
     this.dragThreshold = 5; // Minimum pixels to consider it a drag
-    this.wasDragged = false; // Flag to prevent click after drag
+    // Removed this.wasDragged as it's no longer needed for click prevention
     
     // Bound event handlers for consistent add/removeEventListener
     this.boundHandleDrag = this.handleDrag.bind(this);
@@ -180,7 +180,13 @@ class ImageGrid {
     };
 
     gridItem.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
+      // Prevent click event from opening overlay if it was a drag
+      if (this.draggedDistance > this.dragThreshold) {
+        e.stopPropagation();
+        this.draggedDistance = 0; // Reset for next interaction
+        return;
+      }
+      if (e.target.tagName !== 'A' && !this.isDraggingImage) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
       }
     });
@@ -640,7 +646,13 @@ class ImageGrid {
     };
 
     gridItem.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'A' && !this.isDraggingImage && !this.wasDragged) { // Only toggle if not dragging and not clicking a link
+      // Prevent click event from opening overlay if it was a drag
+      if (this.draggedDistance > this.dragThreshold) {
+        e.stopPropagation();
+        this.draggedDistance = 0; // Reset for next interaction
+        return;
+      }
+      if (e.target.tagName !== 'A' && !this.isDraggingImage) { // Only toggle if not dragging and not clicking a link
         infoOverlay.classList.toggle('show');
       }
     });
@@ -734,7 +746,7 @@ class ImageGrid {
     this.initialDragX = e.clientX;
     this.initialDragY = e.clientY;
     this.draggedDistance = 0; // Reset distance for new drag
-    this.wasDragged = false; // Reset wasDragged flag at the start of a new interaction
+    // Removed this.wasDragged = false; as it's no longer needed
     
     const gridContainerRect = this.gridContainer.getBoundingClientRect();
     
@@ -800,11 +812,7 @@ class ImageGrid {
         this.draggedElement.dataset.distanceFromBottom = this.gridHeight - (newY + newHeight);
       }
       
-      if (this.draggedDistance > this.dragThreshold) {
-        this.wasDragged = true; // Set wasDragged to true if it was a drag
-      } 
-      // No longer using setTimeout to clear wasDragged, it's reset on next startDrag
-
+      // Removed this.wasDragged logic as it's no longer needed for click prevention
     }
     
     document.removeEventListener('mousemove', this.boundHandleDrag);
