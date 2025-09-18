@@ -323,6 +323,8 @@ class ImageGrid {
           e.stopPropagation(); 
         } else if (action === 'addImage') {
           this.handleContextMenuAction(action, null);
+        } else if (action === 'setGridHeight') {
+          this.handleContextMenuAction(action, null);
         } else if (this.selectedItem) { 
           this.handleContextMenuAction(action, this.selectedItem);
         }
